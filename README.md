@@ -2,6 +2,8 @@
 
 `jsdoc-theme-hia` 是新的 HIA JSDoc 主题。
 
+GitHub: <https://github.com/mandolin/jsdoc-theme-hia>
+
 它不继续 fork 旧 `docdash-hia`，也不依赖原 `docdash`。旧 `docdash-hia` 中有价值的视觉和交互经验会作为迁移参考。
 
 ## 目标

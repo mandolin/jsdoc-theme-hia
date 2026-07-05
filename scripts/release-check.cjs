@@ -45,6 +45,9 @@ function run() {
   assert.equal(pkg.license, "MIT");
   assert.equal(pkg.private, true);
   assert.equal(pkg.main, "publish.js");
+  assert.equal(pkg.repository.url, "git+https://github.com/mandolin/jsdoc-theme-hia.git");
+  assert.equal(pkg.bugs.url, "https://github.com/mandolin/jsdoc-theme-hia/issues");
+  assert.equal(pkg.homepage, "https://github.com/mandolin/jsdoc-theme-hia#readme");
   assert.equal(pkg.peerDependencies.jsdoc, "^4.0.0");
   assert.ok(pkg.scripts.test);
   assert.ok(pkg.scripts["test:jsdoc"]);

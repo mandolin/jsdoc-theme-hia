@@ -4,6 +4,14 @@
   "private": true,
   "description": "Independent HIA theme for JSDoc.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mandolin/jsdoc-theme-hia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mandolin/jsdoc-theme-hia/issues"
+  },
+  "homepage": "https://github.com/mandolin/jsdoc-theme-hia#readme",
   "main": "publish.js",
   "files": [
     "publish.js",
