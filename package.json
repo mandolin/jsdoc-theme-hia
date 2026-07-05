@@ -1,0 +1,44 @@
+{
+  "name": "jsdoc-theme-hia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Independent HIA theme for JSDoc.",
+  "license": "MIT",
+  "main": "publish.js",
+  "files": [
+    "publish.js",
+    "src",
+    "static",
+    "examples/basic/jsdoc.conf.json",
+    "examples/basic/README.md",
+    "examples/basic/src",
+    "README.md",
+    "CHANGELOG.md",
+    "RELEASE_CHECKLIST.md",
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check:syntax": "node --check publish.js && node --check src/metadata-reader.cjs && node --check src/render.cjs && node --check static/hia-theme.js && node --check test/render-fixture.cjs && node --check scripts/clean-generated.cjs && node --check scripts/release-check.cjs",
+    "clean:examples": "node scripts/clean-generated.cjs",
+    "release:check": "node scripts/release-check.cjs && npm pack --dry-run",
+    "test": "node test/render-fixture.cjs",
+    "test:jsdoc": "npx --yes jsdoc@4.0.5 -c examples/basic/jsdoc.conf.json",
+    "test:all": "npm run check:syntax && npm test && npm run test:jsdoc && npm run clean:examples && npm run release:check"
+  },
+  "keywords": [
+    "jsdoc",
+    "theme",
+    "hia",
+    "documentation"
+  ],
+  "peerDependencies": {
+    "jsdoc": "^4.0.0"
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

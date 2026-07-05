@@ -1,0 +1,32 @@
+{
+  "plugins": ["../jsdoc-plugin-hia-sys/src/index.cjs"],
+  "source": {
+    "include": ["examples/basic/src"]
+  },
+  "opts": {
+    "template": ".",
+    "destination": "examples/basic/out",
+    "recurse": true,
+    "hia": {
+      "mode": "standalone",
+      "source": {
+        "link": {
+          "enabled": true,
+          "rootUrl": "https://example.invalid/hia-docs",
+          "openMode": "new-tab"
+        },
+        "preview": {
+          "enabled": true,
+          "defaultExpanded": false
+        }
+      },
+      "i18n": {
+        "enabled": true,
+        "defaultLocale": "zh-CN",
+        "fallbackLocale": "en",
+        "locales": ["zh-CN", "en"],
+        "mode": "runtimeSwitch"
+      }
+    }
+  }
+}
