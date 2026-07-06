@@ -12,6 +12,9 @@
     "url": "https://github.com/mandolin/jsdoc-theme-hia/issues"
   },
   "homepage": "https://github.com/mandolin/jsdoc-theme-hia#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "publish.js",
   "files": [
     "publish.js",
@@ -36,9 +39,12 @@
   },
   "keywords": [
     "jsdoc",
+    "jsdoc-theme",
     "theme",
     "hia",
-    "documentation"
+    "documentation",
+    "source-preview",
+    "i18n"
   ],
   "peerDependencies": {
     "jsdoc": "^4.0.0"

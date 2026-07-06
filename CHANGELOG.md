@@ -21,6 +21,7 @@
 - Optional language select control for projects with more locales.
 - Built-in theme skins: `classic`, `lumen` and `graphite`.
 - Configurable source code display defaults and runtime controls.
+- Release metadata declares public scoped publishing and records the publish strategy/checklist.
 
 ### Notes
 
