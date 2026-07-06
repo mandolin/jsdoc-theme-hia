@@ -17,6 +17,13 @@ const auditRecords = [
     purpose: "Host-project JSDoc runtime peer used by the theme."
   },
   {
+    name: "@mandolin/jsdoc-plugin-hia-sys",
+    dependencyType: "devDependencies",
+    versionRange: "0.1.0",
+    license: "MIT",
+    purpose: "Development and CI fixture plugin used to generate HIA metadata for theme smoke tests."
+  },
+  {
     name: "jsdoc",
     dependencyType: "devDependencies",
     versionRange: "^4.0.5",

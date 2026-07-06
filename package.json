@@ -53,6 +53,7 @@
     "jsdoc": "^4.0.0"
   },
   "devDependencies": {
+    "@mandolin/jsdoc-plugin-hia-sys": "0.1.0",
     "jsdoc": "^4.0.5"
   },
   "engines": {

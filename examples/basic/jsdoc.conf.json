@@ -1,5 +1,5 @@
 {
-  "plugins": ["../jsdoc-plugin-hia-sys/src/index.cjs"],
+  "plugins": ["node_modules/@mandolin/jsdoc-plugin-hia-sys/src/index.cjs"],
   "source": {
     "include": ["examples/basic/src"]
   },

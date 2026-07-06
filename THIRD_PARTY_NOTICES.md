@@ -12,7 +12,10 @@ This theme has no bundled runtime dependency besides Node.js built-ins and brows
 
 ## Development Dependencies
 
+- `@mandolin/jsdoc-plugin-hia-sys` `0.1.0` (`MIT`)
 - `jsdoc` `^4.0.5` (`Apache-2.0`)
+
+`@mandolin/jsdoc-plugin-hia-sys` is used only by development and CI fixture runs to generate HIA metadata consumed by the theme smoke tests.
 
 ## License Audit
 
