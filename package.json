@@ -1,7 +1,7 @@
 {
-  "name": "jsdoc-theme-hia",
+  "name": "@mandolin/jsdoc-theme-hia",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Independent HIA theme for JSDoc.",
   "license": "MIT",
   "repository": {

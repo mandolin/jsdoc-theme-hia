@@ -76,11 +76,22 @@
     return;
   }
 
+  const localePageSelects = Array.from(document.querySelectorAll("[data-hia-locale-page-select]"));
+
+  for (const select of localePageSelects) {
+    select.addEventListener("change", () => {
+      if (select.value) {
+        window.location.href = select.value;
+      }
+    });
+  }
+
   if (i18nData.runtimeSwitch === false) {
     return;
   }
 
   const localeControls = Array.from(document.querySelectorAll("[data-hia-locale-control]"));
+  const localeSelects = Array.from(document.querySelectorAll("[data-hia-locale-select]"));
   const localizedBlocks = Array.from(document.querySelectorAll("[data-hia-locale]"));
   const storageKey = "hia-docs-locale";
 
@@ -116,12 +127,61 @@
     return i18nData.locales[0];
   }
 
+  function getLabels(locale) {
+    const labels = i18nData.labels || {};
+    const normalized = String(locale || "");
+    const baseLocale = normalized.split("-")[0];
+
+    return Object.assign(
+      {},
+      labels.en || {},
+      labels[baseLocale] || {},
+      labels[normalized] || {}
+    );
+  }
+
+  function formatLabel(template, element) {
+    return String(template || "").replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, name) => {
+      const value = element.getAttribute(`data-hia-label-${name}`);
+      return value === null ? "" : value;
+    });
+  }
+
+  function applyLabels(locale) {
+    const labels = getLabels(locale);
+
+    for (const element of document.querySelectorAll("[data-hia-label]")) {
+      const key = element.getAttribute("data-hia-label");
+
+      if (labels[key]) {
+        element.textContent = formatLabel(labels[key], element);
+      }
+    }
+
+    for (const element of document.querySelectorAll("[data-hia-label-aria]")) {
+      const key = element.getAttribute("data-hia-label-aria");
+
+      if (labels[key]) {
+        element.setAttribute("aria-label", formatLabel(labels[key], element));
+      }
+    }
+
+    for (const element of document.querySelectorAll("[data-hia-label-placeholder]")) {
+      const key = element.getAttribute("data-hia-label-placeholder");
+
+      if (labels[key]) {
+        element.setAttribute("placeholder", formatLabel(labels[key], element));
+      }
+    }
+  }
+
   function setLocale(locale) {
     if (!i18nData.locales.includes(locale)) {
       return;
     }
 
     document.documentElement.lang = locale;
+    applyLabels(locale);
 
     writeStoredLocale(locale);
 
@@ -134,11 +194,21 @@
       control.classList.toggle("active", active);
       control.setAttribute("aria-pressed", active ? "true" : "false");
     }
+
+    for (const select of localeSelects) {
+      select.value = locale;
+    }
   }
 
   for (const control of localeControls) {
     control.addEventListener("click", () => {
       setLocale(control.getAttribute("data-hia-locale-control"));
+    });
+  }
+
+  for (const select of localeSelects) {
+    select.addEventListener("change", () => {
+      setLocale(select.value);
     });
   }
 

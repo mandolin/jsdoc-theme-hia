@@ -3,6 +3,7 @@
 const {
   collectPageI18n,
   getDocletI18n,
+  getLocalizedFieldEntry,
   getLocalizedEntry,
   summarizeHiaMetadata
 } = require("./metadata-reader.cjs");
@@ -56,6 +57,141 @@ const JAVASCRIPT_KEYWORDS = new Set([
   "yield"
 ]);
 
+const BUILTIN_THEME_SKINS = new Set(["classic", "lumen", "graphite"]);
+
+const UI_LABELS = {
+  en: {
+    "skip.content": "Skip to content",
+    "header.eyebrow": "API Documentation",
+    "summary.symbols": "{count} symbols",
+    "nav.symbols": "Symbols",
+    "search.label": "Search symbols",
+    "search.placeholder": "Filter by name, kind, or summary",
+    "empty.symbols": "No document symbols.",
+    "language.controls": "Languages",
+    "language.select": "Select language",
+    "language.runtime": "runtime",
+    "section.parameters": "Parameters",
+    "section.properties": "Properties",
+    "section.returns": "Returns",
+    "section.examples": "Examples",
+    "section.source": "Source",
+    "section.sourceReferences": "Source References",
+    "section.metadata": "Metadata",
+    "source.file": "File",
+    "source.lines": "Lines",
+    "source.lineRange": "Lines {start}-{end}",
+    "source.preview": "Source preview",
+    "source.unresolved": "Source fragment metadata is missing or unresolved.",
+    "source.previewDisabled": "Source preview is disabled for this fragment.",
+    "source.definedIn": "Defined in",
+    "source.reference": "Reference {index}",
+    "table.name": "Name",
+    "table.type": "Type",
+    "table.default": "Default",
+    "table.attributes": "Attributes",
+    "table.description": "Description",
+    "attr.optional": "optional",
+    "attr.nullable": "nullable",
+    "attr.repeatable": "repeatable",
+    "meta.kind": "Kind",
+    "meta.name": "Name",
+    "meta.longname": "Longname",
+    "meta.memberof": "Member of",
+    "meta.definedIn": "Defined in",
+    "meta.hiaMetadata": "HIA metadata",
+    "meta.microPlugins": "Micro plugins",
+    "meta.sourceRefs": "Source refs",
+    "meta.locales": "Locales",
+    "meta.defaultLocale": "Default locale",
+    "meta.fallbackLocale": "Fallback locale",
+    "meta.i18nMode": "I18N mode",
+    "meta.i18nFields": "I18N fields",
+    "meta.missingLocales": "Missing locales",
+    "value.yes": "yes",
+    "value.no": "no",
+    "value.empty": "-",
+    "example.default": "Example {index}",
+    "kind.module": "Modules",
+    "kind.namespace": "Namespaces",
+    "kind.class": "Classes",
+    "kind.interface": "Interfaces",
+    "kind.mixin": "Mixins",
+    "kind.function": "Functions",
+    "kind.member": "Members",
+    "kind.constant": "Constants",
+    "kind.typedef": "Typedefs",
+    "kind.event": "Events",
+    "kind.external": "Externals",
+    "kind.unknown": "Other"
+  },
+  "zh-CN": {
+    "skip.content": "跳到内容",
+    "header.eyebrow": "API 文档",
+    "summary.symbols": "{count} 个符号",
+    "nav.symbols": "符号",
+    "search.label": "搜索符号",
+    "search.placeholder": "按名称、类型或摘要筛选",
+    "empty.symbols": "没有文档符号。",
+    "language.controls": "语言",
+    "language.select": "选择语言",
+    "language.runtime": "运行时",
+    "section.parameters": "参数",
+    "section.properties": "属性",
+    "section.returns": "返回值",
+    "section.examples": "示例",
+    "section.source": "源码",
+    "section.sourceReferences": "源码引用",
+    "section.metadata": "元数据",
+    "source.file": "文件",
+    "source.lines": "行",
+    "source.lineRange": "行 {start}-{end}",
+    "source.preview": "源码预览",
+    "source.unresolved": "源码片段元数据缺失或未解析。",
+    "source.previewDisabled": "此源码片段的预览已禁用。",
+    "source.definedIn": "定义于",
+    "source.reference": "引用 {index}",
+    "table.name": "名称",
+    "table.type": "类型",
+    "table.default": "默认值",
+    "table.attributes": "属性",
+    "table.description": "描述",
+    "attr.optional": "可选",
+    "attr.nullable": "可空",
+    "attr.repeatable": "可重复",
+    "meta.kind": "类型",
+    "meta.name": "名称",
+    "meta.longname": "完整名称",
+    "meta.memberof": "所属",
+    "meta.definedIn": "定义于",
+    "meta.hiaMetadata": "HIA metadata",
+    "meta.microPlugins": "微插件",
+    "meta.sourceRefs": "源码引用数",
+    "meta.locales": "语言",
+    "meta.defaultLocale": "默认语言",
+    "meta.fallbackLocale": "Fallback 语言",
+    "meta.i18nMode": "I18N 模式",
+    "meta.i18nFields": "I18N 字段数",
+    "meta.missingLocales": "缺失语言",
+    "value.yes": "是",
+    "value.no": "否",
+    "value.empty": "-",
+    "example.default": "示例 {index}",
+    "kind.module": "模块",
+    "kind.namespace": "命名空间",
+    "kind.class": "类",
+    "kind.interface": "接口",
+    "kind.mixin": "Mixin",
+    "kind.function": "函数",
+    "kind.member": "成员",
+    "kind.constant": "常量",
+    "kind.typedef": "类型定义",
+    "kind.event": "事件",
+    "kind.external": "外部项",
+    "kind.unknown": "其它"
+  }
+};
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -69,6 +205,125 @@ function escapeJsonScript(value) {
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e")
     .replace(/&/g, "\\u0026");
+}
+
+function getUiLabels(locale = "") {
+  const normalized = String(locale || "").trim();
+  const baseLocale = normalized.split("-")[0];
+
+  return {
+    ...UI_LABELS.en,
+    ...(UI_LABELS[baseLocale] || {}),
+    ...(UI_LABELS[normalized] || {})
+  };
+}
+
+function formatUiLabel(labels, key, values = {}) {
+  const template = labels[key] || UI_LABELS.en[key] || key;
+
+  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, name) => {
+    return Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : "";
+  });
+}
+
+function renderLabelAttributes(key, values = {}) {
+  const attrs = [`data-hia-label="${escapeHtml(key)}"`];
+
+  for (const [name, value] of Object.entries(values)) {
+    attrs.push(`data-hia-label-${escapeHtml(name)}="${escapeHtml(value)}"`);
+  }
+
+  return attrs.join(" ");
+}
+
+function renderAriaLabelAttributes(key) {
+  return `data-hia-label-aria="${escapeHtml(key)}"`;
+}
+
+function renderPlaceholderLabelAttributes(key) {
+  return `data-hia-label-placeholder="${escapeHtml(key)}"`;
+}
+
+function normalizeSkinName(value) {
+  const normalized = String(value || "classic").trim();
+
+  return BUILTIN_THEME_SKINS.has(normalized) ? normalized : "classic";
+}
+
+function normalizeThemeOptions(options = {}) {
+  const collapse = options.collapse && typeof options.collapse === "object"
+    ? options.collapse
+    : {};
+  const languageControls = options.languageControls && typeof options.languageControls === "object"
+    ? options.languageControls
+    : {};
+  const skinOption = options.skin && typeof options.skin === "object"
+    ? options.skin.name
+    : options.skin;
+  const dropdownThreshold = Number(languageControls.dropdownThreshold || 4);
+
+  return {
+    skin: {
+      name: normalizeSkinName(skinOption)
+    },
+    collapse: {
+      docletsDefaultExpanded: collapse.docletsDefaultExpanded !== false,
+      sectionsDefaultExpanded: collapse.sectionsDefaultExpanded !== false,
+      metadataDefaultExpanded: collapse.metadataDefaultExpanded !== false
+    },
+    languageControls: {
+      mode: ["auto", "buttons", "select"].includes(languageControls.mode)
+        ? languageControls.mode
+        : "auto",
+      dropdownThreshold: Number.isFinite(dropdownThreshold) && dropdownThreshold > 1
+        ? dropdownThreshold
+        : 4
+    }
+  };
+}
+
+function getCollapseOpenAttribute(renderOptions, target) {
+  const collapse = renderOptions.theme && renderOptions.theme.collapse
+    ? renderOptions.theme.collapse
+    : normalizeThemeOptions().collapse;
+  const key = `${target}DefaultExpanded`;
+
+  return collapse[key] === false ? "" : " open";
+}
+
+function shouldUseLanguageSelect(pageI18n, renderOptions = {}) {
+  const languageControls = renderOptions.theme && renderOptions.theme.languageControls
+    ? renderOptions.theme.languageControls
+    : normalizeThemeOptions().languageControls;
+
+  if (languageControls.mode === "select") {
+    return true;
+  }
+
+  if (languageControls.mode === "buttons") {
+    return false;
+  }
+
+  return pageI18n.locales.length >= languageControls.dropdownThreshold;
+}
+
+function renderCollapsibleSection(titleKey, body, labels, renderOptions, options = {}) {
+  if (!body) {
+    return "";
+  }
+
+  const className = options.className || "doc-section";
+  const target = options.target || "sections";
+  const open = getCollapseOpenAttribute(renderOptions, target);
+
+  return [
+    `<details class="${escapeHtml(className)} collapsible-section"${open}>`,
+    `  <summary class="section-summary collapse-summary"><h3 ${renderLabelAttributes(titleKey)}>${escapeHtml(formatUiLabel(labels, titleKey))}</h3></summary>`,
+    '  <div class="section-body">',
+    body,
+    "  </div>",
+    "</details>"
+  ].join("\n");
 }
 
 function stripHtml(value) {
@@ -270,6 +525,64 @@ function renderLocalizedDescription(doclet, pageI18n, renderOptions = {}) {
   return `<div class="i18n-description-set">${blocks.join("\n")}</div>`;
 }
 
+function sanitizeFieldPathPart(value, fallback) {
+  const text = String(value || fallback || "").trim();
+  return text.replace(/\s+/g, "_").replace(/[.]/g, "_") || String(fallback || "");
+}
+
+function getRuntimeLocale(pageI18n, renderOptions = {}) {
+  return renderOptions.locale || pageI18n.defaultLocale || "en";
+}
+
+function getLocalizedText(localizedResult, defaultText = "") {
+  return getEntryText(localizedResult, {
+    description: defaultText,
+    classdesc: ""
+  });
+}
+
+function renderLocalizedField(doclet, fieldPath, defaultText, pageI18n, renderOptions = {}, options = {}) {
+  const i18n = getDocletI18n(doclet);
+  const renderer = options.renderer || renderMarkdownish;
+  const empty = options.empty === undefined ? "" : options.empty;
+  const tag = options.tag || "div";
+  const className = options.className || "i18n-field";
+
+  if (!i18n || !pageI18n.enabled) {
+    return renderer(defaultText || "") || empty;
+  }
+
+  const renderOne = (locale, hidden) => {
+    const localized = getLocalizedFieldEntry(doclet, fieldPath, locale, {
+      ...pageI18n,
+      defaultText
+    });
+    const text = getLocalizedText(localized, defaultText);
+    const fallback = localized.usedFallback
+      ? ` data-hia-fallback-from="${escapeHtml(localized.resolvedLocale)}"`
+      : "";
+    const hiddenAttr = hidden ? " hidden" : "";
+
+    if (!text) {
+      return "";
+    }
+
+    return `<${tag} class="${escapeHtml(className)}" data-hia-locale="${escapeHtml(locale)}"${fallback}${hiddenAttr}>${renderer(text)}</${tag}>`;
+  };
+
+  if (renderOptions.locale) {
+    const rendered = renderOne(renderOptions.locale, false);
+    return rendered || empty;
+  }
+
+  const locales = pageI18n.locales.length ? pageI18n.locales : i18n.locales || [];
+  const blocks = locales
+    .map((locale) => renderOne(locale, locale !== pageI18n.defaultLocale))
+    .filter(Boolean);
+
+  return blocks.length ? blocks.join("\n") : (renderer(defaultText || "") || empty);
+}
+
 function renderMarkdownish(text) {
   const blocks = [];
   const pattern = /```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g;
@@ -321,152 +634,179 @@ function parseExample(example) {
   };
 }
 
-function renderExamples(doclet) {
+function renderExamples(doclet, pageI18n, renderOptions = {}, labels = UI_LABELS.en) {
   const examples = Array.isArray(doclet.examples) ? doclet.examples : [];
 
   if (!examples.length) {
     return "";
   }
 
-  return [
-    '<section class="doc-section examples">',
-    "  <h3>Examples</h3>",
-    examples
-      .map((example, index) => {
-        const parsed = parseExample(example);
-        const caption = parsed.caption || `Example ${index + 1}`;
+  const body = examples
+    .map((example, index) => {
+      const parsed = parseExample(example);
+      const caption = parsed.caption || formatUiLabel(labels, "example.default", { index: index + 1 });
+      const language = doclet.meta && doclet.meta.filename ? inferLanguageFromName(doclet.meta.filename) : "javascript";
 
-        return [
-          '  <figure class="example-block">',
-          `    <figcaption>${escapeHtml(caption)}</figcaption>`,
-          renderCodeBlock(parsed.code, {
-            language: doclet.meta && doclet.meta.filename ? inferLanguageFromName(doclet.meta.filename) : "javascript",
-            indent: "    "
-          }),
-          "  </figure>"
-        ].join("\n");
-      })
-      .join("\n"),
-    "</section>"
-  ].join("\n");
+      return [
+        '  <figure class="example-block">',
+        `    <figcaption>${renderLocalizedField(doclet, `examples.${index}.caption`, caption, pageI18n, renderOptions, {
+          renderer: escapeHtml,
+          tag: "span",
+          className: "i18n-field inline"
+        })}</figcaption>`,
+        renderLocalizedField(doclet, `examples.${index}.body`, parsed.code, pageI18n, renderOptions, {
+          renderer: (text) => renderCodeBlock(text, { language, indent: "    " }),
+          tag: "div",
+          className: "i18n-example-code"
+        }),
+        "  </figure>"
+      ].join("\n");
+    })
+    .join("\n");
+
+  return renderCollapsibleSection("section.examples", body, labels, renderOptions, {
+    className: "doc-section examples"
+  });
 }
 
-function renderParamTable(title, items, options = {}) {
+function renderParamTable(titleKey, items, doclet, pageI18n, renderOptions = {}, options = {}) {
   if (!Array.isArray(items) || !items.length) {
     return "";
   }
 
+  const labels = options.labels || getUiLabels(getRuntimeLocale(pageI18n, renderOptions));
   const includeDefault = items.some((item) => item.defaultvalue !== undefined);
-  const rows = items.map((item) => {
-    const details = [];
+  const fieldBase = options.fieldBase || "params";
+  const rows = items.map((item, index) => {
+    const detailKeys = [];
+    const fieldName = sanitizeFieldPathPart(item.name, index);
+    const fieldPath = `${fieldBase}.${fieldName}.description`;
 
     if (item.optional) {
-      details.push("optional");
+      detailKeys.push("attr.optional");
     }
 
     if (item.nullable === true) {
-      details.push("nullable");
+      detailKeys.push("attr.nullable");
     }
 
     if (item.variable) {
-      details.push("repeatable");
+      detailKeys.push("attr.repeatable");
     }
+
+    const details = detailKeys.length
+      ? detailKeys
+        .map((key) => `<span ${renderLabelAttributes(key)}>${escapeHtml(formatUiLabel(labels, key))}</span>`)
+        .join(", ")
+      : escapeHtml(formatUiLabel(labels, "value.empty"));
 
     return [
       "<tr>",
       `  <th scope="row"><code>${escapeHtml(options.name ? options.name(item) : item.name || "-")}</code></th>`,
       `  <td><code>${renderType(item.type)}</code></td>`,
-      includeDefault ? `  <td>${item.defaultvalue === undefined ? "-" : `<code>${escapeHtml(item.defaultvalue)}</code>`}</td>` : "",
-      `  <td>${escapeHtml(details.join(", ") || "-")}</td>`,
-      `  <td>${renderMarkdownish(item.description || "") || "-"}</td>`,
+      includeDefault ? `  <td>${item.defaultvalue === undefined ? formatUiLabel(labels, "value.empty") : `<code>${escapeHtml(item.defaultvalue)}</code>`}</td>` : "",
+      `  <td>${details}</td>`,
+      `  <td>${renderLocalizedField(doclet, fieldPath, item.description || "", pageI18n, renderOptions, {
+        empty: formatUiLabel(labels, "value.empty")
+      })}</td>`,
       "</tr>"
     ].filter(Boolean).join("\n");
   });
 
-  return [
-    '<section class="doc-section">',
-    `  <h3>${escapeHtml(title)}</h3>`,
+  const body = [
     '  <div class="table-wrap">',
     '    <table class="doc-table">',
     "      <thead>",
     "        <tr>",
-    "          <th>Name</th>",
-    "          <th>Type</th>",
-    includeDefault ? "          <th>Default</th>" : "",
-    "          <th>Attributes</th>",
-    "          <th>Description</th>",
+    `          <th ${renderLabelAttributes("table.name")}>${escapeHtml(formatUiLabel(labels, "table.name"))}</th>`,
+    `          <th ${renderLabelAttributes("table.type")}>${escapeHtml(formatUiLabel(labels, "table.type"))}</th>`,
+    includeDefault ? `          <th ${renderLabelAttributes("table.default")}>${escapeHtml(formatUiLabel(labels, "table.default"))}</th>` : "",
+    `          <th ${renderLabelAttributes("table.attributes")}>${escapeHtml(formatUiLabel(labels, "table.attributes"))}</th>`,
+    `          <th ${renderLabelAttributes("table.description")}>${escapeHtml(formatUiLabel(labels, "table.description"))}</th>`,
     "        </tr>",
     "      </thead>",
     "      <tbody>",
     rows.join("\n"),
     "      </tbody>",
     "    </table>",
-    "  </div>",
-    "</section>"
+    "  </div>"
   ].filter(Boolean).join("\n");
+
+  return renderCollapsibleSection(titleKey, body, labels, renderOptions);
 }
 
-function renderReturns(doclet) {
+function renderReturns(doclet, pageI18n, renderOptions = {}, labels = UI_LABELS.en) {
   const returns = Array.isArray(doclet.returns) ? doclet.returns : [];
 
   if (!returns.length) {
     return "";
   }
 
-  const rows = returns.map((item) => [
+  const rows = returns.map((item, index) => [
     "<tr>",
     `  <td><code>${renderType(item.type)}</code></td>`,
-    `  <td>${renderMarkdownish(item.description || "") || "-"}</td>`,
+    `  <td>${renderLocalizedField(doclet, `returns.${index}.description`, item.description || "", pageI18n, renderOptions, {
+      empty: formatUiLabel(labels, "value.empty")
+    })}</td>`,
     "</tr>"
   ].join("\n"));
 
-  return [
-    '<section class="doc-section">',
-    "  <h3>Returns</h3>",
+  const body = [
     '  <div class="table-wrap">',
     '    <table class="doc-table compact">',
-    "      <thead><tr><th>Type</th><th>Description</th></tr></thead>",
+    `      <thead><tr><th ${renderLabelAttributes("table.type")}>${escapeHtml(formatUiLabel(labels, "table.type"))}</th><th ${renderLabelAttributes("table.description")}>${escapeHtml(formatUiLabel(labels, "table.description"))}</th></tr></thead>`,
     `      <tbody>${rows.join("\n")}</tbody>`,
     "    </table>",
-    "  </div>",
-    "</section>"
+    "  </div>"
   ].join("\n");
+
+  return renderCollapsibleSection("section.returns", body, labels, renderOptions);
 }
 
-function renderMetadataList(doclet, hiaSummary) {
+function renderMetadataList(doclet, hiaSummary, labels = UI_LABELS.en, renderOptions = {}) {
+  const definedIn = hiaSummary.sourceDefinedIn || (doclet.hia && doclet.hia.source && doclet.hia.source.definedIn);
   const entries = [
-    ["Kind", doclet.kind || "unknown"],
-    ["Name", doclet.name || "-"],
-    ["Longname", doclet.longname || "-"]
+    ["meta.kind", doclet.kind || "unknown"],
+    ["meta.name", doclet.name || formatUiLabel(labels, "value.empty")],
+    ["meta.longname", doclet.longname || formatUiLabel(labels, "value.empty")]
   ];
 
   if (doclet.memberof) {
-    entries.push(["Member of", doclet.memberof]);
+    entries.push(["meta.memberof", doclet.memberof]);
   }
 
-  if (doclet.meta && doclet.meta.filename) {
-    const metaPath = doclet.meta.path
-      ? `${doclet.meta.path}/${doclet.meta.filename}`
-      : doclet.meta.filename;
-    entries.push(["Defined in", metaPath]);
+  if (definedIn) {
+    entries.push(["meta.definedIn", formatSourceLocation(definedIn) || formatUiLabel(labels, "value.empty")]);
   }
 
-  entries.push(["HIA metadata", hiaSummary.hasHia ? "yes" : "no"]);
-  entries.push(["Micro plugins", hiaSummary.microPlugins.join(", ") || "-"]);
-  entries.push(["Source refs", String(hiaSummary.sourceReferenceCount)]);
-  entries.push(["Locales", hiaSummary.locales.join(", ") || "-"]);
-  entries.push(["Default locale", hiaSummary.defaultLocale || "-"]);
-  entries.push(["Fallback locale", hiaSummary.fallbackLocale || "-"]);
-  entries.push(["I18N mode", hiaSummary.i18nMode || "-"]);
-  entries.push(["Missing locales", hiaSummary.missingLocales.join(", ") || "-"]);
+  entries.push(["meta.hiaMetadata", hiaSummary.hasHia ? "value.yes" : "value.no", true]);
+  entries.push(["meta.microPlugins", hiaSummary.microPlugins.join(", ") || formatUiLabel(labels, "value.empty")]);
+  entries.push(["meta.sourceRefs", String(hiaSummary.sourceReferenceCount)]);
+  entries.push(["meta.locales", hiaSummary.locales.join(", ") || formatUiLabel(labels, "value.empty")]);
+  entries.push(["meta.defaultLocale", hiaSummary.defaultLocale || formatUiLabel(labels, "value.empty")]);
+  entries.push(["meta.fallbackLocale", hiaSummary.fallbackLocale || formatUiLabel(labels, "value.empty")]);
+  entries.push(["meta.i18nMode", hiaSummary.i18nMode || formatUiLabel(labels, "value.empty")]);
+  entries.push(["meta.i18nFields", String(hiaSummary.i18nFieldCount || 0)]);
+  entries.push(["meta.missingLocales", hiaSummary.missingLocales.join(", ") || formatUiLabel(labels, "value.empty")]);
 
-  return [
+  const body = [
     '<dl class="meta-list">',
     entries
-      .map(([label, value]) => `  <dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`)
+      .map(([labelKey, value, valueIsLabel]) => {
+        const renderedValue = valueIsLabel
+          ? `<dd ${renderLabelAttributes(value)}>${escapeHtml(formatUiLabel(labels, value))}</dd>`
+          : `<dd>${escapeHtml(value)}</dd>`;
+
+        return `  <dt ${renderLabelAttributes(labelKey)}>${escapeHtml(formatUiLabel(labels, labelKey))}</dt>${renderedValue}`;
+      })
       .join("\n"),
     "</dl>"
   ].join("\n");
+
+  return renderCollapsibleSection("section.metadata", body, labels, renderOptions, {
+    className: "doc-section metadata-section",
+    target: "metadata"
+  });
 }
 
 function getSourceReferences(doclet) {
@@ -474,32 +814,78 @@ function getSourceReferences(doclet) {
   return source && Array.isArray(source.references) ? source.references : [];
 }
 
-function renderSourceReferences(doclet) {
+function getDocletSource(doclet) {
+  return doclet && doclet.hia && doclet.hia.source && typeof doclet.hia.source === "object"
+    ? doclet.hia.source
+    : null;
+}
+
+function formatSourceLocation(fragment) {
+  if (!fragment || !fragment.relativePath) {
+    return "";
+  }
+
+  const range = fragment.range || {};
+  const position = fragment.position || range.start || {};
+  const line = position.line;
+
+  return line ? `${fragment.relativePath}:${line}` : fragment.relativePath;
+}
+
+function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
+  const source = getDocletSource(doclet);
+
+  if (!source || (!source.definedIn && !source.primaryBlock)) {
+    return "";
+  }
+
+  const definedIn = source.definedIn || source.primaryBlock;
+  const primaryBlock = source.primaryBlock;
+  const definedInText = formatSourceLocation(definedIn);
+  const link = (definedIn && definedIn.link) || {};
+  const preview = primaryBlock && primaryBlock.preview ? primaryBlock.preview : null;
+  const canPreview = primaryBlock && preview && preview.enabled !== false && typeof preview.content === "string";
+  const body = [
+    '  <div class="source-reference primary-source">',
+    `    <div class="source-caption"><span ${renderLabelAttributes("source.definedIn")}>${escapeHtml(formatUiLabel(labels, "source.definedIn"))}</span>${definedInText ? ` - ${escapeHtml(definedInText)}` : ""}</div>`,
+    definedIn ? renderSourceLinks(definedIn, link, labels) : "",
+    canPreview
+      ? renderSourcePreview(primaryBlock, preview, labels)
+      : "",
+    "  </div>"
+  ].filter(Boolean).join("\n");
+
+  return renderCollapsibleSection("section.source", body, labels, renderOptions, {
+    className: "doc-section source-section doclet-source"
+  });
+}
+
+function renderSourceReferences(doclet, labels = UI_LABELS.en, renderOptions = {}) {
   const references = getSourceReferences(doclet);
 
   if (!references.length) {
     return "";
   }
 
-  return [
-    '<section class="doc-section source-section">',
-    "  <h3>Source References</h3>",
-    references.map((reference, index) => renderSourceReference(reference, index)).join("\n"),
-    "</section>"
-  ].join("\n");
+  const body = references.map((reference, index) => renderSourceReference(reference, index, labels)).join("\n");
+
+  return renderCollapsibleSection("section.sourceReferences", body, labels, renderOptions, {
+    className: "doc-section source-section source-references"
+  });
 }
 
-function renderSourceReference(reference, index) {
+function renderSourceReference(reference, index, labels = UI_LABELS.en) {
   const fragment = reference.fragment;
+  const fallbackCaption = formatUiLabel(labels, "source.reference", { index: index + 1 });
   const caption = fragment
-    ? `${fragment.id || reference.targetId || `Reference ${index + 1}`} - ${fragment.relativePath || "source"}:${fragment.range.start.line}-${fragment.range.end.line}`
-    : `${reference.targetId || `Reference ${index + 1}`} - unresolved`;
+    ? `${fragment.id || reference.targetId || fallbackCaption} - ${fragment.relativePath || "source"}:${fragment.range.start.line}-${fragment.range.end.line}`
+    : `${reference.targetId || fallbackCaption} - unresolved`;
 
   if (!fragment) {
     return [
       '<div class="source-reference unresolved">',
       `  <div class="source-caption">${escapeHtml(caption)}</div>`,
-      '  <p class="source-fallback">Source fragment metadata is missing or unresolved.</p>',
+      `  <p class="source-fallback" ${renderLabelAttributes("source.unresolved")}>${escapeHtml(formatUiLabel(labels, "source.unresolved"))}</p>`,
       "</div>"
     ].join("\n");
   }
@@ -511,23 +897,23 @@ function renderSourceReference(reference, index) {
   return [
     '<div class="source-reference">',
     `  <div class="source-caption">${escapeHtml(caption)}</div>`,
-    renderSourceLinks(fragment, link),
+    renderSourceLinks(fragment, link, labels),
     canPreview
-      ? renderSourcePreview(fragment, preview)
-      : '  <p class="source-fallback">Source preview is disabled for this fragment.</p>',
+      ? renderSourcePreview(fragment, preview, labels)
+      : `  <p class="source-fallback" ${renderLabelAttributes("source.previewDisabled")}>${escapeHtml(formatUiLabel(labels, "source.previewDisabled"))}</p>`,
     "</div>"
   ].filter(Boolean).join("\n");
 }
 
-function renderSourceLinks(fragment, link) {
+function renderSourceLinks(fragment, link, labels = UI_LABELS.en) {
   const items = [];
 
   if (link.enabled && link.fileUrl) {
-    items.push(renderSourceAnchor("File", link.fileUrl, link.openMode));
+    items.push(renderSourceAnchor(formatUiLabel(labels, "source.file"), link.fileUrl, link.openMode, "source.file"));
   }
 
   if (link.enabled && link.lineUrl) {
-    items.push(renderSourceAnchor("Lines", link.lineUrl, link.openMode));
+    items.push(renderSourceAnchor(formatUiLabel(labels, "source.lines"), link.lineUrl, link.openMode, "source.lines"));
   }
 
   if (!items.length && fragment.relativePath) {
@@ -537,26 +923,31 @@ function renderSourceLinks(fragment, link) {
   return `  <div class="source-links">${items.join("")}</div>`;
 }
 
-function renderSourceAnchor(label, href, openMode) {
+function renderSourceAnchor(label, href, openMode, labelKey = "") {
   const external = openMode === "new-tab" || /^https?:\/\//i.test(href);
   const target = external ? ' target="_blank" rel="noreferrer"' : "";
-  return `<a href="${escapeHtml(href)}"${target}>${escapeHtml(label)}</a>`;
+  const labelAttrs = labelKey ? ` ${renderLabelAttributes(labelKey)}` : "";
+  return `<a href="${escapeHtml(href)}"${target}${labelAttrs}>${escapeHtml(label)}</a>`;
 }
 
-function renderSourcePreview(fragment, preview) {
+function renderSourcePreview(fragment, preview, labels = UI_LABELS.en) {
   const open = preview.defaultExpanded ? " open" : "";
   const language = preview.language || fragment.language || "text";
   const range = preview.range || fragment.range;
-  const rangeText = range
-    ? `Lines ${range.start.line}-${range.end.line}`
-    : "Source preview";
+  const hasRange = Boolean(range && range.start && range.end);
+  const rangeText = hasRange
+    ? formatUiLabel(labels, "source.lineRange", { start: range.start.line, end: range.end.line })
+    : formatUiLabel(labels, "source.preview");
+  const summaryLabelAttrs = hasRange
+    ? renderLabelAttributes("source.lineRange", { start: range.start.line, end: range.end.line })
+    : renderLabelAttributes("source.preview");
 
   return [
     `  <details class="source-preview"${open}>`,
-    `    <summary>${escapeHtml(rangeText)}</summary>`,
+    `    <summary ${summaryLabelAttrs}>${escapeHtml(rangeText)}</summary>`,
     renderCodeBlock(preview.content, {
       language,
-      startLine: range && range.start ? range.start.line : 1,
+      startLine: hasRange ? range.start.line : 1,
       indent: "    "
     }),
     "  </details>"
@@ -629,42 +1020,61 @@ function highlightLine(line, language) {
 function renderDoclet(doclet, pageI18n, renderOptions = {}) {
   const hia = summarizeHiaMetadata(doclet);
   const title = getDocletTitle(doclet);
+  const labels = getUiLabels(getRuntimeLocale(pageI18n, renderOptions));
+  const open = getCollapseOpenAttribute(renderOptions, "doclets");
 
   return [
     `<article class="doclet" id="${escapeHtml(getDocletId(doclet))}" data-kind="${escapeHtml(doclet.kind || "unknown")}">`,
-    "  <header class=\"doclet-header\">",
-    `    <h2>${escapeHtml(title)}</h2>`,
+    `  <details class="doclet-details"${open}>`,
+    '    <summary class="doclet-summary collapse-summary">',
+    '      <div class="doclet-summary-main">',
+    `        <h2>${escapeHtml(title)}</h2>`,
     renderBadges(doclet, hia),
-    `    <pre class="signature"><code>${escapeHtml(renderSignature(doclet))}</code></pre>`,
-    "  </header>",
+    "      </div>",
+    "    </summary>",
+    '    <div class="doclet-body">',
+    `      <pre class="signature"><code>${escapeHtml(renderSignature(doclet))}</code></pre>`,
     renderLocalizedDescription(doclet, pageI18n, renderOptions),
-    renderParamTable("Parameters", doclet.params, {
-      name: getParamDisplayName
+    renderParamTable("section.parameters", doclet.params, doclet, pageI18n, renderOptions, {
+      labels,
+      name: getParamDisplayName,
+      fieldBase: "params"
     }),
-    renderReturns(doclet),
-    renderParamTable("Properties", doclet.properties),
-    renderExamples(doclet),
-    renderSourceReferences(doclet),
-    renderMetadataList(doclet, hia),
+    renderReturns(doclet, pageI18n, renderOptions, labels),
+    renderParamTable("section.properties", doclet.properties, doclet, pageI18n, renderOptions, {
+      labels,
+      fieldBase: "properties"
+    }),
+    renderExamples(doclet, pageI18n, renderOptions, labels),
+    renderDocletSource(doclet, labels, renderOptions),
+    renderSourceReferences(doclet, labels, renderOptions),
+    renderMetadataList(doclet, hia, labels, renderOptions),
+    "    </div>",
+    "  </details>",
     "</article>"
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-function renderNavigation(groups) {
+function renderNavigation(groups, labels = UI_LABELS.en) {
   if (!groups.length) {
-    return '<p class="empty">No document symbols.</p>';
+    return `<p class="empty" ${renderLabelAttributes("empty.symbols")}>${escapeHtml(formatUiLabel(labels, "empty.symbols"))}</p>`;
   }
 
-  return groups.map((group) => [
-    '<section class="nav-group">',
-    `  <h2>${escapeHtml(group.label)} <span>${group.doclets.length}</span></h2>`,
-    group.doclets
-      .map((doclet) => `<a href="#${escapeHtml(getDocletId(doclet))}">${escapeHtml(doclet.name || doclet.longname || "(anonymous)")}</a>`)
-      .join("\n"),
-    "</section>"
-  ].join("\n")).join("\n");
+  return groups.map((group) => {
+    const labelKey = `kind.${group.kind || "unknown"}`;
+    const groupLabel = formatUiLabel(labels, labelKey) || group.label;
+
+    return [
+      '<section class="nav-group">',
+      `  <h2><span ${renderLabelAttributes(labelKey)}>${escapeHtml(groupLabel)}</span> <span>${group.doclets.length}</span></h2>`,
+      group.doclets
+        .map((doclet) => `<a href="#${escapeHtml(getDocletId(doclet))}">${escapeHtml(doclet.name || doclet.longname || "(anonymous)")}</a>`)
+        .join("\n"),
+      "</section>"
+    ].join("\n");
+  }).join("\n");
 }
 
 function buildSearchIndex(doclets) {
@@ -699,6 +1109,7 @@ function buildI18nPageData(pageI18n, options = {}) {
     defaultLocale: pageI18n.defaultLocale,
     fallbackLocale: pageI18n.fallbackLocale,
     locales: pageI18n.locales,
+    labels: UI_LABELS,
     perLocalePages: pageI18n.locales.reduce((result, locale) => {
       result[locale] = `index.${locale}.html`;
       return result;
@@ -706,16 +1117,51 @@ function buildI18nPageData(pageI18n, options = {}) {
   };
 }
 
-function renderLanguageControls(pageI18n, renderOptions = {}) {
+function renderLanguageControls(pageI18n, renderOptions = {}, labels = UI_LABELS.en) {
   if (!pageI18n.enabled || pageI18n.locales.length < 2) {
     return "";
   }
 
   const selectedLocale = renderOptions.locale || pageI18n.defaultLocale;
+  const ariaLabel = escapeHtml(formatUiLabel(labels, "language.controls"));
+  const useSelect = shouldUseLanguageSelect(pageI18n, renderOptions);
+
+  if (useSelect && renderOptions.locale) {
+    return [
+      `<label class="language-select-control" aria-label="${ariaLabel}" ${renderAriaLabelAttributes("language.controls")}>`,
+      `  <span ${renderLabelAttributes("language.select")}>${escapeHtml(formatUiLabel(labels, "language.select"))}</span>`,
+      '  <select class="language-select" data-hia-locale-page-select>',
+      pageI18n.locales
+        .map((locale) => {
+          const selected = locale === selectedLocale ? " selected" : "";
+          return `    <option value="index.${escapeHtml(locale)}.html"${selected}>${escapeHtml(locale)}</option>`;
+        })
+        .join("\n"),
+      `    <option value="index.html" ${renderLabelAttributes("language.runtime")}>${escapeHtml(formatUiLabel(labels, "language.runtime"))}</option>`,
+      "  </select>",
+      "</label>"
+    ].join("\n");
+  }
+
+  if (useSelect) {
+    return [
+      `<label class="language-select-control" aria-label="${ariaLabel}" ${renderAriaLabelAttributes("language.controls")}>`,
+      `  <span ${renderLabelAttributes("language.select")}>${escapeHtml(formatUiLabel(labels, "language.select"))}</span>`,
+      '  <select class="language-select" data-hia-locale-select>',
+      pageI18n.locales
+        .map((locale) => {
+          const selected = locale === selectedLocale ? " selected" : "";
+          return `    <option value="${escapeHtml(locale)}"${selected}>${escapeHtml(locale)}</option>`;
+        })
+        .join("\n"),
+      "  </select>",
+      "</label>"
+    ].join("\n");
+  }
 
   if (renderOptions.locale) {
     return [
-      '<nav class="language-controls" aria-label="Languages">',
+      `<nav class="language-controls" aria-label="${ariaLabel}" ${renderAriaLabelAttributes("language.controls")}>`,
       pageI18n.locales
         .map((locale) => {
           const active = locale === selectedLocale ? " active" : "";
@@ -723,13 +1169,13 @@ function renderLanguageControls(pageI18n, renderOptions = {}) {
           return `<a class="language-link${active}" href="index.${escapeHtml(locale)}.html"${aria}>${escapeHtml(locale)}</a>`;
         })
         .join(""),
-      '<a class="language-link" href="index.html">runtime</a>',
+      `<a class="language-link" href="index.html" ${renderLabelAttributes("language.runtime")}>${escapeHtml(formatUiLabel(labels, "language.runtime"))}</a>`,
       "</nav>"
     ].join("\n");
   }
 
   return [
-    '<div class="language-controls" role="group" aria-label="Languages">',
+    `<div class="language-controls" role="group" aria-label="${ariaLabel}" ${renderAriaLabelAttributes("language.controls")}>`,
     pageI18n.locales
       .map((locale) => {
         const active = locale === selectedLocale ? " active" : "";
@@ -747,12 +1193,16 @@ function renderPage(options) {
   const pageI18n = collectPageI18n(doclets);
   const groups = groupDoclets(doclets);
   const renderOptions = {
-    locale: options.locale || ""
+    locale: options.locale || "",
+    theme: normalizeThemeOptions(options.theme || {})
   };
+  const labels = getUiLabels(getRuntimeLocale(pageI18n, renderOptions));
   const body = doclets.map((doclet) => renderDoclet(doclet, pageI18n, renderOptions)).join("\n");
   const searchIndex = JSON.stringify(buildSearchIndex(doclets));
   const i18nPageData = JSON.stringify(buildI18nPageData(pageI18n, renderOptions) || {});
   const htmlLang = renderOptions.locale || pageI18n.defaultLocale || "en";
+  const symbolCountLabel = formatUiLabel(labels, "summary.symbols", { count: doclets.length });
+  const skinName = renderOptions.theme.skin.name;
 
   return `<!doctype html>
 <html lang="${escapeHtml(htmlLang)}">
@@ -760,28 +1210,29 @@ function renderPage(options) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="hia-theme.css">
 </head>
-<body>
-  <a class="skip-link" href="#hia-content">Skip to content</a>
+<body class="hia-skin hia-skin-${escapeHtml(skinName)}" data-hia-skin="${escapeHtml(skinName)}">
+  <a class="skip-link" href="#hia-content" ${renderLabelAttributes("skip.content")}>${escapeHtml(formatUiLabel(labels, "skip.content"))}</a>
   <header class="site-header">
     <div>
-      <p class="eyebrow">API Documentation</p>
+      <p class="eyebrow" ${renderLabelAttributes("header.eyebrow")}>${escapeHtml(formatUiLabel(labels, "header.eyebrow"))}</p>
       <h1>${escapeHtml(title)}</h1>
     </div>
     <div class="site-actions">
-      ${renderLanguageControls(pageI18n, renderOptions)}
-      <div class="summary-stat">${doclets.length} symbols</div>
+      ${renderLanguageControls(pageI18n, renderOptions, labels)}
+      <div class="summary-stat" ${renderLabelAttributes("summary.symbols", { count: doclets.length })}>${escapeHtml(symbolCountLabel)}</div>
     </div>
   </header>
   <main class="layout">
-    <nav class="sidebar" aria-label="Symbols">
-      <label class="search-label" for="hia-symbol-search">Search symbols</label>
-      <input id="hia-symbol-search" class="search-input" type="search" placeholder="Filter by name, kind, or summary" autocomplete="off" aria-controls="hia-content">
-      ${renderNavigation(groups)}
+    <nav class="sidebar" aria-label="${escapeHtml(formatUiLabel(labels, "nav.symbols"))}" ${renderAriaLabelAttributes("nav.symbols")}>
+      <label class="search-label" for="hia-symbol-search" ${renderLabelAttributes("search.label")}>${escapeHtml(formatUiLabel(labels, "search.label"))}</label>
+      <input id="hia-symbol-search" class="search-input" type="search" placeholder="${escapeHtml(formatUiLabel(labels, "search.placeholder"))}" ${renderPlaceholderLabelAttributes("search.placeholder")} autocomplete="off" aria-controls="hia-content">
+      ${renderNavigation(groups, labels)}
     </nav>
     <section class="content" id="hia-content" tabindex="-1">
-      ${body || '<p class="empty">No document symbols.</p>'}
+      ${body || `<p class="empty" ${renderLabelAttributes("empty.symbols")}>${escapeHtml(formatUiLabel(labels, "empty.symbols"))}</p>`}
     </section>
   </main>
   <script type="application/json" id="hia-search-data">${escapeJsonScript(searchIndex)}</script>

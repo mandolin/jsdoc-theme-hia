@@ -49,14 +49,22 @@ function copyStatic(destination) {
   writeFile(path.join(destination, "hia-theme.js"), js);
 }
 
+function getThemeOptions(opts) {
+  return opts && opts.hia && opts.hia.theme && typeof opts.hia.theme === "object"
+    ? opts.hia.theme
+    : {};
+}
+
 function publish(data, opts) {
   const destination = path.resolve(opts.destination || "out");
   const doclets = getDoclets(data);
   const pageI18n = collectPageI18n(doclets);
   const searchIndex = buildSearchIndex(doclets);
+  const theme = getThemeOptions(opts);
   const page = renderPage({
     title: "HIA JSDoc",
-    doclets
+    doclets,
+    theme
   });
 
   fs.mkdirSync(destination, {
@@ -72,7 +80,8 @@ function publish(data, opts) {
         renderPage({
           title: "HIA JSDoc",
           doclets,
-          locale
+          locale,
+          theme
         })
       );
     }

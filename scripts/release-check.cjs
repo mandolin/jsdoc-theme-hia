@@ -33,17 +33,17 @@ function exists(relativePath) {
 
 function assertNoGeneratedOutput() {
   assert.equal(exists("examples/basic/out"), false, "examples/basic/out must not be committed");
-  assert.equal(exists("jsdoc-theme-hia-0.1.0.tgz"), false, "dry-run tarball must not remain");
+  assert.equal(exists("mandolin-jsdoc-theme-hia-0.1.0.tgz"), false, "dry-run tarball must not remain");
 }
 
 function run() {
   const pkg = readJson("package.json");
   const exampleConfig = readJson("examples/basic/jsdoc.conf.json");
 
-  assert.equal(pkg.name, "jsdoc-theme-hia");
+  assert.equal(pkg.name, "@mandolin/jsdoc-theme-hia");
   assert.equal(pkg.version, "0.1.0");
   assert.equal(pkg.license, "MIT");
-  assert.equal(pkg.private, true);
+  assert.equal(pkg.private, false);
   assert.equal(pkg.main, "publish.js");
   assert.equal(pkg.repository.url, "git+https://github.com/mandolin/jsdoc-theme-hia.git");
   assert.equal(pkg.bugs.url, "https://github.com/mandolin/jsdoc-theme-hia/issues");
@@ -67,7 +67,7 @@ function run() {
 
   assertNoGeneratedOutput();
 
-  console.log("jsdoc-theme-hia release check passed.");
+  console.log("@mandolin/jsdoc-theme-hia release check passed.");
 }
 
 run();

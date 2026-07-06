@@ -26,6 +26,18 @@
         "fallbackLocale": "en",
         "locales": ["zh-CN", "en"],
         "mode": "runtimeSwitch"
+      },
+      "theme": {
+        "skin": "classic",
+        "collapse": {
+          "docletsDefaultExpanded": true,
+          "sectionsDefaultExpanded": true,
+          "metadataDefaultExpanded": true
+        },
+        "languageControls": {
+          "mode": "auto",
+          "dropdownThreshold": 4
+        }
       }
     }
   }

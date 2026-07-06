@@ -1,6 +1,6 @@
 # Basic Example
 
-This example verifies the first JTH planning-cycle feature set:
+This example shows the core theme features:
 
 - JSDoc theme loading.
 - Standard JSDoc API rendering.

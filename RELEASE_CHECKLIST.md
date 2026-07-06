@@ -2,7 +2,7 @@
 
 ## Scope
 
-Package: `jsdoc-theme-hia`
+Package: `@mandolin/jsdoc-theme-hia`
 
 Version: `0.1.0`
 
