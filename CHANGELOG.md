@@ -20,6 +20,7 @@
 - Theme UI options for collapse defaults and language control mode.
 - Optional language select control for projects with more locales.
 - Built-in theme skins: `classic`, `lumen` and `graphite`.
+- Configurable source code display defaults and runtime controls.
 
 ### Notes
 

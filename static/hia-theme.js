@@ -4,6 +4,7 @@
   const input = document.getElementById("hia-symbol-search");
   const dataElement = document.getElementById("hia-search-data");
   const i18nElement = document.getElementById("hia-i18n-data");
+  const themeElement = document.getElementById("hia-theme-data");
 
   if (!input || !dataElement) {
     return;
@@ -61,6 +62,183 @@
   }
 
   input.addEventListener("input", update);
+
+  let themeData = {};
+
+  if (themeElement) {
+    try {
+      themeData = JSON.parse(themeElement.textContent || "{}");
+    } catch (_error) {
+      themeData = {};
+    }
+  }
+
+  const codeFontFamilies = {
+    cascadia: "\"Cascadia Code\", \"Cascadia Mono\", Consolas, monospace",
+    consolas: "Consolas, \"Courier New\", monospace",
+    mono: "ui-monospace, \"SFMono-Regular\", Menlo, Monaco, Consolas, monospace",
+    system: "monospace"
+  };
+  const codeStorageKey = "hia-docs-code-display";
+  const codeControls = document.querySelector("[data-hia-code-controls]");
+
+  function clampNumber(value, fallback, min, max) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+      return fallback;
+    }
+
+    return Math.min(max, Math.max(min, number));
+  }
+
+  function normalizeCodeSettings(value) {
+    const source = value && typeof value === "object" ? value : {};
+    const fontFamily = codeFontFamilies[source.fontFamily] ? source.fontFamily : "cascadia";
+
+    return {
+      fontFamily,
+      fontSize: clampNumber(source.fontSize, 12, 10, 20),
+      lineHeight: clampNumber(source.lineHeight, 1.55, 1.2, 2.2),
+      tabSize: Math.round(clampNumber(source.tabSize, 2, 2, 8)),
+      wrap: Boolean(source.wrap)
+    };
+  }
+
+  function readStoredCodeSettings() {
+    try {
+      if (!window.localStorage) {
+        return null;
+      }
+
+      const raw = window.localStorage.getItem(codeStorageKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function writeStoredCodeSettings(settings) {
+    try {
+      if (window.localStorage) {
+        window.localStorage.setItem(codeStorageKey, JSON.stringify(settings));
+      }
+    } catch (_error) {
+      // Ignore storage failures; code display controls still work for the page.
+    }
+  }
+
+  function clearStoredCodeSettings() {
+    try {
+      if (window.localStorage) {
+        window.localStorage.removeItem(codeStorageKey);
+      }
+    } catch (_error) {
+      // Ignore storage failures.
+    }
+  }
+
+  function applyCodeSettings(settings) {
+    const normalized = normalizeCodeSettings(settings);
+    const body = document.body;
+
+    body.style.setProperty("--code-font-family", codeFontFamilies[normalized.fontFamily]);
+    body.style.setProperty("--code-font-size", `${normalized.fontSize}px`);
+    body.style.setProperty("--code-line-height", String(normalized.lineHeight));
+    body.style.setProperty("--code-tab-size", String(normalized.tabSize));
+    body.classList.toggle("hia-code-wrap", normalized.wrap);
+
+    if (codeControls) {
+      const fontFamilyInput = codeControls.querySelector("[data-hia-code-font-family]");
+      const fontSizeInput = codeControls.querySelector("[data-hia-code-font-size]");
+      const lineHeightInput = codeControls.querySelector("[data-hia-code-line-height]");
+      const tabSizeInput = codeControls.querySelector("[data-hia-code-tab-size]");
+      const wrapInput = codeControls.querySelector("[data-hia-code-wrap]");
+
+      if (fontFamilyInput) {
+        fontFamilyInput.value = normalized.fontFamily;
+      }
+
+      if (fontSizeInput) {
+        fontSizeInput.value = String(normalized.fontSize);
+      }
+
+      if (lineHeightInput) {
+        lineHeightInput.value = String(normalized.lineHeight);
+      }
+
+      if (tabSizeInput) {
+        tabSizeInput.value = String(normalized.tabSize);
+      }
+
+      if (wrapInput) {
+        wrapInput.checked = normalized.wrap;
+      }
+    }
+
+    return normalized;
+  }
+
+  function initCodeControls() {
+    if (!codeControls) {
+      return;
+    }
+
+    const defaults = normalizeCodeSettings(themeData.code || {});
+    const stored = readStoredCodeSettings();
+    let current = applyCodeSettings(stored ? { ...defaults, ...stored } : defaults);
+
+    function updateCodeSettings(next) {
+      current = applyCodeSettings({ ...current, ...next });
+      writeStoredCodeSettings(current);
+    }
+
+    const fontFamilyInput = codeControls.querySelector("[data-hia-code-font-family]");
+    const fontSizeInput = codeControls.querySelector("[data-hia-code-font-size]");
+    const lineHeightInput = codeControls.querySelector("[data-hia-code-line-height]");
+    const tabSizeInput = codeControls.querySelector("[data-hia-code-tab-size]");
+    const wrapInput = codeControls.querySelector("[data-hia-code-wrap]");
+    const resetButton = codeControls.querySelector("[data-hia-code-reset]");
+
+    if (fontFamilyInput) {
+      fontFamilyInput.addEventListener("change", () => {
+        updateCodeSettings({ fontFamily: fontFamilyInput.value });
+      });
+    }
+
+    if (fontSizeInput) {
+      fontSizeInput.addEventListener("input", () => {
+        updateCodeSettings({ fontSize: fontSizeInput.value });
+      });
+    }
+
+    if (lineHeightInput) {
+      lineHeightInput.addEventListener("input", () => {
+        updateCodeSettings({ lineHeight: lineHeightInput.value });
+      });
+    }
+
+    if (tabSizeInput) {
+      tabSizeInput.addEventListener("input", () => {
+        updateCodeSettings({ tabSize: tabSizeInput.value });
+      });
+    }
+
+    if (wrapInput) {
+      wrapInput.addEventListener("change", () => {
+        updateCodeSettings({ wrap: wrapInput.checked });
+      });
+    }
+
+    if (resetButton) {
+      resetButton.addEventListener("click", () => {
+        clearStoredCodeSettings();
+        current = applyCodeSettings(defaults);
+      });
+    }
+  }
+
+  initCodeControls();
 
   let i18nData = {};
 

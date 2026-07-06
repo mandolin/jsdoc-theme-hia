@@ -17,6 +17,10 @@
   --warn: #8a5a00;
   --code-bg: #101820;
   --code-line: #d7e1ea;
+  --code-font-family: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
+  --code-font-size: 12px;
+  --code-line-height: 1.55;
+  --code-tab-size: 2;
 }
 
 * {
@@ -236,6 +240,80 @@ summary:focus-visible,
   font: inherit;
 }
 
+.code-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.code-controls-title {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.code-control {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.code-control:not(.compact) {
+  grid-column: 1 / -1;
+}
+
+.code-select,
+.code-input {
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  color: #1f2933;
+  background: #ffffff;
+  font: inherit;
+  font-size: 12px;
+}
+
+.code-select {
+  padding: 4px 8px;
+}
+
+.code-input {
+  padding: 4px 6px;
+}
+
+.code-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.code-reset {
+  min-height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  color: #284456;
+  background: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.code-reset:hover {
+  color: var(--link-hover);
+  border-color: var(--link);
+}
+
 .nav-group {
   display: grid;
   gap: 6px;
@@ -323,6 +401,20 @@ summary:focus-visible,
   transition: transform 120ms ease;
 }
 
+.doclet-summary.collapse-summary::after {
+  width: 9px;
+  height: 9px;
+  border-color: #607083;
+}
+
+.section-summary.collapse-summary::after {
+  width: 7px;
+  height: 7px;
+  margin-right: 16px;
+  border-color: var(--accent);
+  opacity: 0.82;
+}
+
 details[open] > .collapse-summary::after {
   transform: rotate(225deg);
 }
@@ -398,7 +490,7 @@ details[open] > .collapse-summary::after {
 }
 
 .signature code {
-  font-family: "Cascadia Code", Consolas, monospace;
+  font-family: var(--code-font-family);
   font-size: 13px;
   white-space: pre;
 }
@@ -519,17 +611,30 @@ details[open] > .collapse-summary::after {
   display: block;
   min-width: max-content;
   padding: 12px 0;
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.55;
-  tab-size: 2;
+  font-family: var(--code-font-family);
+  font-size: var(--code-font-size);
+  line-height: var(--code-line-height);
+  tab-size: var(--code-tab-size);
 }
 
 .code-line {
   display: block;
-  min-height: 18px;
+  min-height: calc(var(--code-font-size) * var(--code-line-height));
   padding: 0 14px;
   white-space: pre;
+}
+
+.hia-code-wrap .code-block {
+  overflow-x: hidden;
+}
+
+.hia-code-wrap .code-block code {
+  min-width: 0;
+}
+
+.hia-code-wrap .code-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .code-line[data-line]::before {

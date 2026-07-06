@@ -37,6 +37,14 @@
         "languageControls": {
           "mode": "auto",
           "dropdownThreshold": 4
+        },
+        "code": {
+          "controls": true,
+          "fontFamily": "cascadia",
+          "fontSize": 12,
+          "lineHeight": 1.55,
+          "tabSize": 2,
+          "wrap": false
         }
       }
     }

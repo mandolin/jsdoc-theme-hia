@@ -353,6 +353,19 @@ const skinHtml = renderPage({
     skin: "graphite"
   }
 });
+const codeOptionsHtml = renderPage({
+  title: "Fixture",
+  doclets: [doclet, moduleDoclet, typedefDoclet],
+  theme: {
+    code: {
+      fontFamily: "mono",
+      fontSize: 14,
+      lineHeight: 1.7,
+      tabSize: 4,
+      wrap: true
+    }
+  }
+});
 const searchIndex = buildSearchIndex([doclet, moduleDoclet, typedefDoclet]);
 const pageI18n = collectPageI18n([doclet, moduleDoclet, typedefDoclet]);
 const pageI18nData = buildI18nPageData(pageI18n);
@@ -395,9 +408,15 @@ assert.match(html, /tok-keyword/);
 assert.match(html, /源码片段元数据缺失或未解析。/);
 assert.match(html, /hia-search-data/);
 assert.match(html, /hia-i18n-data/);
+assert.match(html, /hia-theme-data/);
 assert.match(html, /class="skip-link"/);
 assert.match(html, /aria-controls="hia-content"/);
 assert.match(html, /id="hia-content"/);
+assert.match(html, /data-hia-code-controls/);
+assert.match(html, /data-hia-code-font-family/);
+assert.match(html, /data-hia-code-font-size/);
+assert.match(html, /data-hia-label="code.controls"/);
+assert.match(html, /--code-font-size: 12px/);
 assert.match(html, /data-hia-label="search.label"/);
 assert.match(html, /data-hia-label-placeholder="search.placeholder"/);
 assert.match(html, /data-hia-locale-control="zh-CN"/);
@@ -429,5 +448,10 @@ assert.match(selectZhHtml, /data-hia-locale-page-select/);
 assert.match(selectZhHtml, /<option value="index.html" data-hia-label="language.runtime">运行时<\/option>/);
 assert.match(skinHtml, /data-hia-skin="graphite"/);
 assert.match(skinHtml, /class="hia-skin hia-skin-graphite"/);
+assert.match(codeOptionsHtml, /class="hia-skin hia-skin-classic hia-code-wrap"/);
+assert.match(codeOptionsHtml, /--code-font-size: 14px/);
+assert.match(codeOptionsHtml, /--code-line-height: 1.7/);
+assert.match(codeOptionsHtml, /--code-tab-size: 4/);
+assert.match(codeOptionsHtml, /"fontFamily":"mono"/);
 
 console.log("G-JTH-P5 render fixtures passed.");

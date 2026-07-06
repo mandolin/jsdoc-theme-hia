@@ -58,6 +58,18 @@ const JAVASCRIPT_KEYWORDS = new Set([
 ]);
 
 const BUILTIN_THEME_SKINS = new Set(["classic", "lumen", "graphite"]);
+const CODE_FONT_FAMILIES = {
+  cascadia: "\"Cascadia Code\", \"Cascadia Mono\", Consolas, monospace",
+  consolas: "Consolas, \"Courier New\", monospace",
+  mono: "ui-monospace, \"SFMono-Regular\", Menlo, Monaco, Consolas, monospace",
+  system: "monospace"
+};
+const CODE_FONT_OPTIONS = [
+  ["cascadia", "Cascadia"],
+  ["consolas", "Consolas"],
+  ["mono", "UI Mono"],
+  ["system", "Monospace"]
+];
 
 const UI_LABELS = {
   en: {
@@ -71,6 +83,13 @@ const UI_LABELS = {
     "language.controls": "Languages",
     "language.select": "Select language",
     "language.runtime": "runtime",
+    "code.controls": "Code display",
+    "code.fontFamily": "Font",
+    "code.fontSize": "Size",
+    "code.lineHeight": "Line height",
+    "code.tabSize": "Tab",
+    "code.wrap": "Wrap",
+    "code.reset": "Reset",
     "section.parameters": "Parameters",
     "section.properties": "Properties",
     "section.returns": "Returns",
@@ -136,6 +155,13 @@ const UI_LABELS = {
     "language.controls": "语言",
     "language.select": "选择语言",
     "language.runtime": "运行时",
+    "code.controls": "代码显示",
+    "code.fontFamily": "字体",
+    "code.fontSize": "字号",
+    "code.lineHeight": "行高",
+    "code.tabSize": "缩进",
+    "code.wrap": "换行",
+    "code.reset": "重置",
     "section.parameters": "参数",
     "section.properties": "属性",
     "section.returns": "返回值",
@@ -250,12 +276,40 @@ function normalizeSkinName(value) {
   return BUILTIN_THEME_SKINS.has(normalized) ? normalized : "classic";
 }
 
+function clampNumber(value, fallback, min, max) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, number));
+}
+
+function normalizeCodeOptions(options = {}) {
+  const fontFamily = CODE_FONT_FAMILIES[options.fontFamily]
+    ? options.fontFamily
+    : "cascadia";
+
+  return {
+    controls: options.controls !== false,
+    fontFamily,
+    fontSize: clampNumber(options.fontSize, 12, 10, 20),
+    lineHeight: clampNumber(options.lineHeight, 1.55, 1.2, 2.2),
+    tabSize: Math.round(clampNumber(options.tabSize, 2, 2, 8)),
+    wrap: Boolean(options.wrap)
+  };
+}
+
 function normalizeThemeOptions(options = {}) {
   const collapse = options.collapse && typeof options.collapse === "object"
     ? options.collapse
     : {};
   const languageControls = options.languageControls && typeof options.languageControls === "object"
     ? options.languageControls
+    : {};
+  const code = options.code && typeof options.code === "object"
+    ? options.code
     : {};
   const skinOption = options.skin && typeof options.skin === "object"
     ? options.skin.name
@@ -278,8 +332,61 @@ function normalizeThemeOptions(options = {}) {
       dropdownThreshold: Number.isFinite(dropdownThreshold) && dropdownThreshold > 1
         ? dropdownThreshold
         : 4
-    }
+    },
+    code: normalizeCodeOptions(code)
   };
+}
+
+function renderCodeStyle(codeOptions) {
+  const fontFamily = CODE_FONT_FAMILIES[codeOptions.fontFamily] || CODE_FONT_FAMILIES.cascadia;
+
+  return [
+    `--code-font-family: ${fontFamily}`,
+    `--code-font-size: ${codeOptions.fontSize}px`,
+    `--code-line-height: ${codeOptions.lineHeight}`,
+    `--code-tab-size: ${codeOptions.tabSize}`
+  ].join("; ");
+}
+
+function renderCodeControls(renderOptions, labels) {
+  const code = renderOptions.theme.code;
+
+  if (!code.controls) {
+    return "";
+  }
+
+  const fontOptions = CODE_FONT_OPTIONS.map(([value, label]) => {
+    const selected = value === code.fontFamily ? " selected" : "";
+    return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(label)}</option>`;
+  }).join("");
+  const wrapChecked = code.wrap ? " checked" : "";
+
+  return `<form class="code-controls" data-hia-code-controls aria-label="${escapeHtml(formatUiLabel(labels, "code.controls"))}" ${renderAriaLabelAttributes("code.controls")}>
+        <div class="code-controls-title" ${renderLabelAttributes("code.controls")}>${escapeHtml(formatUiLabel(labels, "code.controls"))}</div>
+        <label class="code-control">
+          <span ${renderLabelAttributes("code.fontFamily")}>${escapeHtml(formatUiLabel(labels, "code.fontFamily"))}</span>
+          <select class="code-select" data-hia-code-font-family>
+            ${fontOptions}
+          </select>
+        </label>
+        <label class="code-control compact">
+          <span ${renderLabelAttributes("code.fontSize")}>${escapeHtml(formatUiLabel(labels, "code.fontSize"))}</span>
+          <input class="code-input" type="number" min="10" max="20" step="1" value="${escapeHtml(code.fontSize)}" data-hia-code-font-size>
+        </label>
+        <label class="code-control compact">
+          <span ${renderLabelAttributes("code.lineHeight")}>${escapeHtml(formatUiLabel(labels, "code.lineHeight"))}</span>
+          <input class="code-input" type="number" min="1.2" max="2.2" step="0.05" value="${escapeHtml(code.lineHeight)}" data-hia-code-line-height>
+        </label>
+        <label class="code-control compact">
+          <span ${renderLabelAttributes("code.tabSize")}>${escapeHtml(formatUiLabel(labels, "code.tabSize"))}</span>
+          <input class="code-input" type="number" min="2" max="8" step="1" value="${escapeHtml(code.tabSize)}" data-hia-code-tab-size>
+        </label>
+        <label class="code-toggle">
+          <input type="checkbox" data-hia-code-wrap${wrapChecked}>
+          <span ${renderLabelAttributes("code.wrap")}>${escapeHtml(formatUiLabel(labels, "code.wrap"))}</span>
+        </label>
+        <button class="code-reset" type="button" data-hia-code-reset ${renderLabelAttributes("code.reset")}>${escapeHtml(formatUiLabel(labels, "code.reset"))}</button>
+      </form>`;
 }
 
 function getCollapseOpenAttribute(renderOptions, target) {
@@ -1200,9 +1307,12 @@ function renderPage(options) {
   const body = doclets.map((doclet) => renderDoclet(doclet, pageI18n, renderOptions)).join("\n");
   const searchIndex = JSON.stringify(buildSearchIndex(doclets));
   const i18nPageData = JSON.stringify(buildI18nPageData(pageI18n, renderOptions) || {});
+  const themeData = JSON.stringify({ code: renderOptions.theme.code });
   const htmlLang = renderOptions.locale || pageI18n.defaultLocale || "en";
   const symbolCountLabel = formatUiLabel(labels, "summary.symbols", { count: doclets.length });
   const skinName = renderOptions.theme.skin.name;
+  const codeWrapClass = renderOptions.theme.code.wrap ? " hia-code-wrap" : "";
+  const codeStyle = renderCodeStyle(renderOptions.theme.code);
 
   return `<!doctype html>
 <html lang="${escapeHtml(htmlLang)}">
@@ -1213,7 +1323,7 @@ function renderPage(options) {
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="hia-theme.css">
 </head>
-<body class="hia-skin hia-skin-${escapeHtml(skinName)}" data-hia-skin="${escapeHtml(skinName)}">
+<body class="hia-skin hia-skin-${escapeHtml(skinName)}${codeWrapClass}" data-hia-skin="${escapeHtml(skinName)}" style="${escapeHtml(codeStyle)}">
   <a class="skip-link" href="#hia-content" ${renderLabelAttributes("skip.content")}>${escapeHtml(formatUiLabel(labels, "skip.content"))}</a>
   <header class="site-header">
     <div>
@@ -1229,6 +1339,7 @@ function renderPage(options) {
     <nav class="sidebar" aria-label="${escapeHtml(formatUiLabel(labels, "nav.symbols"))}" ${renderAriaLabelAttributes("nav.symbols")}>
       <label class="search-label" for="hia-symbol-search" ${renderLabelAttributes("search.label")}>${escapeHtml(formatUiLabel(labels, "search.label"))}</label>
       <input id="hia-symbol-search" class="search-input" type="search" placeholder="${escapeHtml(formatUiLabel(labels, "search.placeholder"))}" ${renderPlaceholderLabelAttributes("search.placeholder")} autocomplete="off" aria-controls="hia-content">
+      ${renderCodeControls(renderOptions, labels)}
       ${renderNavigation(groups, labels)}
     </nav>
     <section class="content" id="hia-content" tabindex="-1">
@@ -1237,6 +1348,7 @@ function renderPage(options) {
   </main>
   <script type="application/json" id="hia-search-data">${escapeJsonScript(searchIndex)}</script>
   <script type="application/json" id="hia-i18n-data">${escapeJsonScript(i18nPageData)}</script>
+  <script type="application/json" id="hia-theme-data">${escapeJsonScript(themeData)}</script>
   <script src="hia-theme.js" defer></script>
 </body>
 </html>

@@ -18,6 +18,7 @@ GitHub: <https://github.com/mandolin/jsdoc-theme-hia>
 - Provides collapsible doclet cards and collapsible sections for params, returns, examples, source and metadata.
 - Supports button or select language controls, with an automatic select mode for larger locale lists.
 - Provides built-in theme skins: `classic`, `lumen` and `graphite`.
+- Provides configurable source code display controls for font, size, line height, tab size and wrapping.
 - Writes `search-index.json`, `i18n-index.json` and `hia-metadata.json`.
 - Includes basic responsive layout and keyboard focus styles.
 
@@ -91,6 +92,14 @@ To consume HIA metadata, load the companion plugin as well:
         "languageControls": {
           "mode": "auto",
           "dropdownThreshold": 4
+        },
+        "code": {
+          "controls": true,
+          "fontFamily": "cascadia",
+          "fontSize": 12,
+          "lineHeight": 1.55,
+          "tabSize": 2,
+          "wrap": false
         }
       }
     }
@@ -133,6 +142,12 @@ Theme UI behavior can be configured under `opts.hia.theme`:
 - `collapse.metadataDefaultExpanded`: whether metadata sections are expanded by default.
 - `languageControls.mode`: `auto`, `buttons` or `select`.
 - `languageControls.dropdownThreshold`: locale count at which `auto` switches from buttons to a select control.
+- `code.controls`: whether generated pages include runtime code display controls.
+- `code.fontFamily`: default source code font preset, currently `cascadia`, `consolas`, `mono` or `system`.
+- `code.fontSize`: default source code font size in pixels.
+- `code.lineHeight`: default source code line height.
+- `code.tabSize`: default source code tab size.
+- `code.wrap`: whether source code wraps by default.
 
 ## Scripts
 
