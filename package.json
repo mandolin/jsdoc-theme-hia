@@ -30,14 +30,15 @@
     "LICENSE"
   ],
   "scripts": {
-    "check:syntax": "node --check publish.js && node --check src/metadata-reader.cjs && node --check src/render.cjs && node --check static/hia-theme.js && node --check test/render-fixture.cjs && node --check scripts/clean-generated.cjs && node --check scripts/check-example-governance.cjs && node --check scripts/release-check.cjs",
+    "check:syntax": "node --check publish.js && node --check src/metadata-reader.cjs && node --check src/render.cjs && node --check static/hia-theme.js && node --check test/render-fixture.cjs && node --check scripts/clean-generated.cjs && node --check scripts/check-example-governance.cjs && node --check scripts/check-license-audit.cjs && node --check scripts/release-check.cjs",
     "clean:examples": "node scripts/clean-generated.cjs",
     "governance:check": "node scripts/check-example-governance.cjs",
+    "license:audit": "node scripts/check-license-audit.cjs",
     "release:gate": "npm run test:all && npm pack --dry-run --json",
     "release:check": "node scripts/release-check.cjs && npm pack --dry-run",
     "test": "node test/render-fixture.cjs",
     "test:jsdoc": "npx --yes jsdoc@4.0.5 -c examples/basic/jsdoc.conf.json",
-    "test:all": "npm run check:syntax && npm test && npm run test:jsdoc && npm run clean:examples && npm run governance:check && npm run release:check"
+    "test:all": "npm run check:syntax && npm test && npm run test:jsdoc && npm run clean:examples && npm run governance:check && npm run license:audit && npm run release:check"
   },
   "keywords": [
     "jsdoc",

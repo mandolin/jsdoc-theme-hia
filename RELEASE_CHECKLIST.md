@@ -13,6 +13,7 @@ Version: `0.1.0`
 - [ ] `npm run test:jsdoc`
 - [ ] `npm run clean:examples`
 - [ ] `npm run governance:check`
+- [ ] `npm run license:audit`
 - [ ] `npm run release:check`
 - [ ] `npm run test:all`
 - [ ] `npm run release:gate`
@@ -27,6 +28,7 @@ Version: `0.1.0`
 - [ ] Mobile layout is usable.
 - [ ] Keyboard focus is visible.
 - [ ] `THIRD_PARTY_NOTICES.md` is current.
+- [ ] Direct dependency licenses are still allowed by the package policy.
 - [ ] `CHANGELOG.md` has the target version.
 - [ ] `package.json` keeps `publishConfig.access` as `public`.
 - [ ] Dry-run artifact contents are limited to theme sources, static assets, examples and release docs.
