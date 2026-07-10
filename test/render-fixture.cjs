@@ -369,6 +369,17 @@ const codeOptionsHtml = renderPage({
 const searchIndex = buildSearchIndex([doclet, moduleDoclet, typedefDoclet]);
 const pageI18n = collectPageI18n([doclet, moduleDoclet, typedefDoclet]);
 const pageI18nData = buildI18nPageData(pageI18n);
+const blockedFontPattern = new RegExp([
+  "Con" + "solas",
+  "Courier" + " New",
+  "Segoe" + " UI",
+  "Microsoft" + " YaHei",
+  "Ar" + "ial",
+  "SFMono" + "-Regular",
+  "Men" + "lo",
+  "Mon" + "aco",
+  "ui" + "-monospace"
+].join("|"));
 
 assert.equal(summary.hasHia, true);
 assert.equal(summary.sourceReferenceCount, 2);
@@ -416,7 +427,9 @@ assert.match(html, /data-hia-code-controls/);
 assert.match(html, /data-hia-code-font-family/);
 assert.match(html, /data-hia-code-font-size/);
 assert.match(html, /data-hia-label="code.controls"/);
+assert.match(html, /Sarasa Mono SC/);
 assert.match(html, /--code-font-size: 12px/);
+assert.doesNotMatch(html, blockedFontPattern);
 assert.match(html, /data-hia-label="search.label"/);
 assert.match(html, /data-hia-label-placeholder="search.placeholder"/);
 assert.match(html, /data-hia-locale-control="zh-CN"/);

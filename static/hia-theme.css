@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+  font-family: "Inter", "Noto Sans SC", "Source Han Sans SC", "Sarasa Gothic SC", sans-serif;
   color: var(--text);
   background: var(--page-bg);
   --page-bg: #f5f7fa;
@@ -17,7 +17,7 @@
   --warn: #8a5a00;
   --code-bg: #101820;
   --code-line: #d7e1ea;
-  --code-font-family: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
+  --code-font-family: "Sarasa Mono SC", "Sarasa Fixed SC", "Noto Sans Mono CJK SC", "Source Han Mono SC", "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
   --code-font-size: 12px;
   --code-line-height: 1.55;
   --code-tab-size: 2;
@@ -578,7 +578,7 @@ details[open] > .collapse-summary::after {
 }
 
 .doc-table code {
-  font-family: "Cascadia Code", Consolas, monospace;
+  font-family: var(--code-font-family);
   font-size: 12px;
   overflow-wrap: anywhere;
 }

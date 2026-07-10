@@ -95,7 +95,7 @@ To consume HIA metadata, load the companion plugin as well:
         },
         "code": {
           "controls": true,
-          "fontFamily": "cascadia",
+          "fontFamily": "sarasa",
           "fontSize": 12,
           "lineHeight": 1.55,
           "tabSize": 2,
@@ -143,11 +143,20 @@ Theme UI behavior can be configured under `opts.hia.theme`:
 - `languageControls.mode`: `auto`, `buttons` or `select`.
 - `languageControls.dropdownThreshold`: locale count at which `auto` switches from buttons to a select control.
 - `code.controls`: whether generated pages include runtime code display controls.
-- `code.fontFamily`: default source code font preset, currently `cascadia`, `consolas`, `mono` or `system`.
+- `code.fontFamily`: default source code font preset, currently `sarasa`, `cascadia`, `mono` or `system`. The default `sarasa` preset prefers Sarasa Mono SC / 等距更纱黑体 SC for mixed Chinese and English source code.
 - `code.fontSize`: default source code font size in pixels.
 - `code.lineHeight`: default source code line height.
 - `code.tabSize`: default source code tab size.
 - `code.wrap`: whether source code wraps by default.
+
+## Font Policy
+
+The theme does not bundle, download or redistribute font files. Generated pages use local font-family stacks that prefer open-source fonts:
+
+- UI text: `Inter`, `Noto Sans SC`, `Source Han Sans SC` and `Sarasa Gothic SC`.
+- Source code: `Sarasa Mono SC`, `Sarasa Fixed SC`, `Noto Sans Mono CJK SC`, `Source Han Mono SC`, `Cascadia Code`, `JetBrains Mono` and `Fira Code`.
+
+Install the preferred fonts in the consuming environment if exact rendering matters. Browser generic fallbacks are used when none of the listed fonts are available.
 
 ## Scripts
 

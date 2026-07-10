@@ -59,16 +59,16 @@ const JAVASCRIPT_KEYWORDS = new Set([
 
 const BUILTIN_THEME_SKINS = new Set(["classic", "lumen", "graphite"]);
 const CODE_FONT_FAMILIES = {
-  cascadia: "\"Cascadia Code\", \"Cascadia Mono\", Consolas, monospace",
-  consolas: "Consolas, \"Courier New\", monospace",
-  mono: "ui-monospace, \"SFMono-Regular\", Menlo, Monaco, Consolas, monospace",
+  sarasa: "\"Sarasa Mono SC\", \"Sarasa Fixed SC\", \"Noto Sans Mono CJK SC\", \"Source Han Mono SC\", \"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", monospace",
+  cascadia: "\"Cascadia Code\", \"Sarasa Mono SC\", \"Sarasa Fixed SC\", \"Noto Sans Mono CJK SC\", \"Source Han Mono SC\", \"JetBrains Mono\", \"Fira Code\", monospace",
+  mono: "monospace",
   system: "monospace"
 };
 const CODE_FONT_OPTIONS = [
-  ["cascadia", "Cascadia"],
-  ["consolas", "Consolas"],
-  ["mono", "UI Mono"],
-  ["system", "Monospace"]
+  ["sarasa", "Sarasa Mono SC"],
+  ["cascadia", "Cascadia Code"],
+  ["mono", "Generic Mono"],
+  ["system", "Generic Monospace"]
 ];
 
 const UI_LABELS = {
@@ -289,7 +289,7 @@ function clampNumber(value, fallback, min, max) {
 function normalizeCodeOptions(options = {}) {
   const fontFamily = CODE_FONT_FAMILIES[options.fontFamily]
     ? options.fontFamily
-    : "cascadia";
+    : "sarasa";
 
   return {
     controls: options.controls !== false,
@@ -338,7 +338,7 @@ function normalizeThemeOptions(options = {}) {
 }
 
 function renderCodeStyle(codeOptions) {
-  const fontFamily = CODE_FONT_FAMILIES[codeOptions.fontFamily] || CODE_FONT_FAMILIES.cascadia;
+  const fontFamily = CODE_FONT_FAMILIES[codeOptions.fontFamily] || CODE_FONT_FAMILIES.sarasa;
 
   return [
     `--code-font-family: ${fontFamily}`,

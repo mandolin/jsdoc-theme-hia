@@ -74,9 +74,9 @@
   }
 
   const codeFontFamilies = {
-    cascadia: "\"Cascadia Code\", \"Cascadia Mono\", Consolas, monospace",
-    consolas: "Consolas, \"Courier New\", monospace",
-    mono: "ui-monospace, \"SFMono-Regular\", Menlo, Monaco, Consolas, monospace",
+    sarasa: "\"Sarasa Mono SC\", \"Sarasa Fixed SC\", \"Noto Sans Mono CJK SC\", \"Source Han Mono SC\", \"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", monospace",
+    cascadia: "\"Cascadia Code\", \"Sarasa Mono SC\", \"Sarasa Fixed SC\", \"Noto Sans Mono CJK SC\", \"Source Han Mono SC\", \"JetBrains Mono\", \"Fira Code\", monospace",
+    mono: "monospace",
     system: "monospace"
   };
   const codeStorageKey = "hia-docs-code-display";
@@ -94,7 +94,7 @@
 
   function normalizeCodeSettings(value) {
     const source = value && typeof value === "object" ? value : {};
-    const fontFamily = codeFontFamilies[source.fontFamily] ? source.fontFamily : "cascadia";
+    const fontFamily = codeFontFamilies[source.fontFamily] ? source.fontFamily : "sarasa";
 
     return {
       fontFamily,

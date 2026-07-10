@@ -33,6 +33,12 @@ New external dependencies must update this notice file, `package.json`, `scripts
 
 No third-party images, icon sets, fonts, copied Docdash code, or external CSS frameworks are bundled.
 
+## Font Policy
+
+This package does not bundle, download or redistribute font files. CSS font stacks only reference local fonts and generic browser fallbacks.
+
+Preferred local fonts are open-source families, including Sarasa Gothic / 等距更纱黑体, Noto Sans CJK, Source Han Sans/Mono, Cascadia Code, JetBrains Mono, Fira Code and Inter. If a future release bundles any font file, the package must include the corresponding license notice and release audit entry before publication.
+
 ## Legacy Material
 
 Older `docdash-hia` ideas were used as design reference only. This theme is a new implementation and does not copy source files from Docdash or the old repository.
