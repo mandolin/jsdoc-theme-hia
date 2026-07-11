@@ -48,8 +48,8 @@ class ThemeRenderer {
  * // @coderef THEME_DEMO_BODY
  * @coderef THEME_DEMO_BODY
  * @hiaKey theme.demo
- * @hiaText zh-CN 主题演示函数。
- * @hiaText en Theme demo function.
+ * @lang zh-CN 主题演示函数。
+ * @lang en Theme demo function.
  */
 function themeDemo(name, options = {}) {
   /* @codeblock THEME_DEMO_BODY */
