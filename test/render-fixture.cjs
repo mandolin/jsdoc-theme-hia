@@ -1,6 +1,8 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   buildI18nPageData,
   buildSearchIndex,
@@ -223,6 +225,12 @@ const doclet = {
           localizedText: {
             "zh-CN": "显示名称。",
             en: "Display name."
+          },
+          resolutions: {
+            en: {
+              // 模拟旧版 producer 的错误回退标记；主题仍必须优先呈现精确英文翻译。
+              resolvedLocale: "zh-CN"
+            }
           }
         },
         "params.options_locale.description": {
@@ -369,6 +377,7 @@ const codeOptionsHtml = renderPage({
 const searchIndex = buildSearchIndex([doclet, moduleDoclet, typedefDoclet]);
 const pageI18n = collectPageI18n([doclet, moduleDoclet, typedefDoclet]);
 const pageI18nData = buildI18nPageData(pageI18n);
+const themeCss = fs.readFileSync(path.resolve(__dirname, "../static/hia-theme.css"), "utf8");
 const blockedFontPattern = new RegExp([
   "Con" + "solas",
   "Courier" + " New",
@@ -452,6 +461,8 @@ assert.match(enHtml, /API Documentation/);
 assert.match(enHtml, /Parameters/);
 assert.match(enHtml, /Source References/);
 assert.match(enHtml, /Defined in/);
+assert.match(enHtml, /data-hia-locale="en"[^>]*><p>Display name\.<\/p>/);
+assert.doesNotMatch(enHtml, /data-hia-locale="en"[^>]*><p>显示名称。<\/p>/);
 assert.match(collapsedHtml, /<details class="doclet-details">/);
 assert.match(collapsedHtml, /<details class="doc-section collapsible-section">/);
 assert.match(collapsedHtml, /<details class="doc-section metadata-section collapsible-section">/);
@@ -466,5 +477,6 @@ assert.match(codeOptionsHtml, /--code-font-size: 14px/);
 assert.match(codeOptionsHtml, /--code-line-height: 1.7/);
 assert.match(codeOptionsHtml, /--code-tab-size: 4/);
 assert.match(codeOptionsHtml, /"fontFamily":"mono"/);
+assert.match(themeCss, /\.code-block\s*\{[\s\S]*?min-width:\s*0;/);
 
 console.log("G-JTH-P5 render fixtures passed.");

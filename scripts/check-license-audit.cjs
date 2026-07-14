@@ -19,7 +19,7 @@ const auditRecords = [
   {
     name: "@mandolin/jsdoc-plugin-hia-sys",
     dependencyType: "devDependencies",
-    versionRange: "0.1.0",
+    versionRange: "0.1.1",
     license: "MIT",
     purpose: "Development and CI fixture plugin used to generate HIA metadata for theme smoke tests."
   },

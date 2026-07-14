@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 - 2026-07-15
+
+### Fixed
+
+- Prefer an exact field-level locale over a producer fallback marker, so `<lang>` parameter and return descriptions render in the requested language.
+- Allow long doclet names to wrap on narrow screens without expanding the page; code blocks and tables retain their own horizontal scrolling.
+
 ## 0.1.0 - 2026-07-05
 
 ### Added

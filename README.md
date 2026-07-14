@@ -178,7 +178,7 @@ npm run test:all
 
 ## Stability
 
-Version `0.1.0` is an early public package. The theme is usable for small JSDoc projects and metadata experiments, but the rendering contract may evolve before a stable release.
+Version `0.1.x` is an early public package. The theme is usable for small JSDoc projects and metadata experiments, but the rendering contract may evolve before a stable release.
 
 ## License
 

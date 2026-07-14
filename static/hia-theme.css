@@ -426,6 +426,16 @@ details[open] > .collapse-summary::after {
   padding-right: 12px;
 }
 
+.doclet-summary,
+.section-summary,
+.doclet-body,
+.section-body,
+.signature,
+.table-wrap,
+.code-block {
+  min-width: 0;
+}
+
 .doclet-body {
   display: grid;
   gap: 0;

@@ -110,12 +110,17 @@ function getLocalizedFieldEntry(doclet, fieldPath, locale, options = {}) {
       : null;
     const candidates = [];
 
-    if (resolution && resolution.resolvedLocale) {
-      addLocaleCandidate(candidates, resolution.resolvedLocale);
-    }
-
     for (const candidate of buildLocaleCandidates(locale, i18n, options)) {
       addLocaleCandidate(candidates, candidate);
+    }
+
+    // 字段 localizedText 对请求语言具有最高优先级。
+    // Field-level localizedText is authoritative for the requested locale.
+    // 旧 producer 可能写入过时的回退标记，即使 inline <lang> 已有精确译文。
+    // Older producer versions may carry a stale fallback resolution even when
+    // inline <lang> data already contains an exact translation.
+    if (resolution && resolution.resolvedLocale) {
+      addLocaleCandidate(candidates, resolution.resolvedLocale);
     }
 
     for (const candidate of candidates) {
