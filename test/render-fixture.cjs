@@ -478,5 +478,6 @@ assert.match(codeOptionsHtml, /--code-line-height: 1.7/);
 assert.match(codeOptionsHtml, /--code-tab-size: 4/);
 assert.match(codeOptionsHtml, /"fontFamily":"mono"/);
 assert.match(themeCss, /\.code-block\s*\{[\s\S]*?min-width:\s*0;/);
+assert.match(themeCss, /\.doclet\s*\{[\s\S]*?overflow-x:\s*clip;/);
 
 console.log("G-JTH-P5 render fixtures passed.");

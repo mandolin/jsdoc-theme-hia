@@ -364,6 +364,11 @@ summary:focus-visible,
   border-radius: 6px;
   padding: 18px;
   min-width: 0;
+  /*
+   * 源码块和参数表各自管理横向滚动。这里阻止它们的长内容把整页扩宽，
+   * 同时保留子元素的滚动能力，避免窄屏阅读时出现页面级横向滚动。
+   */
+  overflow-x: clip;
 }
 
 .doclet-details {
