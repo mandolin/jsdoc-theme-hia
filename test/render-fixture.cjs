@@ -192,6 +192,38 @@ const doclet = {
           },
           diagnostics: []
         },
+        // 已解析但没有 public link/embed 的 record 必须保留 metadata-only 状态，不能触发任何 source 读取。
+        // A resolved record without public link/embed must retain metadata-only state and must not trigger any source read.
+        {
+          targetId: "METADATA_ONLY_FRAGMENT",
+          sourceNodeId: "module:theme.themeDemo",
+          fieldPath: "tags.coderef",
+          resolved: true,
+          fragment: {
+            id: "METADATA_ONLY_FRAGMENT",
+            relativePath: "examples/basic/src/demo.js",
+            language: "javascript",
+            range: {
+              start: {
+                line: 22,
+                column: 1
+              },
+              end: {
+                line: 22,
+                column: 1
+              }
+            },
+            link: {
+              enabled: false
+            },
+            preview: {
+              enabled: false
+            }
+          },
+          diagnostics: []
+        },
+        // 未解析 record 即使包含 target identity，也不得合成 fragment、href 或 preview。
+        // An unresolved record must not synthesize a fragment, href, or preview even when it contains a target identity.
         {
           targetId: "MISSING_FRAGMENT",
           sourceNodeId: "module:theme.themeDemo",
@@ -364,6 +396,31 @@ const fallbackMemberDoclet = {
   description: "Plain JSDoc containment fallback."
 };
 
+// identity 不匹配的 profile 必须被忽略，并回退到同一 doclet 的 plain JSDoc memberof。
+// An identity-mismatched profile must be ignored and fall back to the same doclet's plain JSDoc memberof.
+const invalidPresentationDoclet = {
+  kind: "function",
+  name: "invalidProfile",
+  longname: "module:theme.invalidProfile",
+  memberof: "module:theme",
+  description: "Invalid presentation profile fallback.",
+  hia: {
+    presentation: {
+      model: "hia-jsdoc-presentation",
+      modelVersion: "0.1.0",
+      identity: {
+        stableId: "jsdoc:function:stale-profile",
+        kind: "function",
+        longname: "module:theme.invalidProfile"
+      },
+      navigation: {
+        parentLongname: "cycleAlpha",
+        group: "function"
+      }
+    }
+  }
+};
+
 // Cycle hints 只降级为 root，既不造成递归也不丢失 node。
 // Cycle hints fall back to roots only; they neither recurse nor lose a node.
 const cycleAlphaDoclet = {
@@ -418,6 +475,10 @@ const fixtureDoclets = [
   cycleAlphaDoclet,
   cycleBetaDoclet
 ];
+
+// 独立 compatibility slice 防止无效 profile 影响主 fixture 的既有 cycle/root 断言。
+// An isolated compatibility slice prevents an invalid profile from changing the main fixture's existing cycle/root assertions.
+const invalidPresentationFixtureDoclets = [moduleDoclet, invalidPresentationDoclet];
 
 const summary = summarizeHiaMetadata(doclet);
 const html = renderPage({
@@ -484,8 +545,17 @@ const codeOptionsHtml = renderPage({
     }
   }
 });
+// 无效 profile 的 HTML 仍必须使用既有 fragment 规则，并且不得泄露 stale profile stableId。
+// HTML for an invalid profile must still use existing fragment rules and must not leak the stale profile stableId.
+const invalidPresentationHtml = renderPage({
+  title: "Invalid presentation fixture",
+  doclets: invalidPresentationFixtureDoclets
+});
 const searchIndex = buildSearchIndex(fixtureDoclets);
 const navigationGroups = buildNavigationGroups(fixtureDoclets);
+// 专用 hierarchy 用于验证 ignored profile 的 memberof fallback，而不是重新定义 containment semantics。
+// A dedicated hierarchy verifies memberof fallback for an ignored profile without redefining containment semantics.
+const invalidPresentationNavigationGroups = buildNavigationGroups(invalidPresentationFixtureDoclets);
 const pageI18n = collectPageI18n(fixtureDoclets);
 const pageI18nData = buildI18nPageData(pageI18n);
 const themeCss = fs.readFileSync(path.resolve(__dirname, "../static/hia-theme.css"), "utf8");
@@ -503,7 +573,7 @@ const blockedFontPattern = new RegExp([
 ].join("|"));
 
 assert.equal(summary.hasHia, true);
-assert.equal(summary.sourceReferenceCount, 2);
+assert.equal(summary.sourceReferenceCount, 3);
 assert.equal(summary.sourceLinkEnabled, true);
 assert.equal(summary.sourcePreviewEnabled, true);
 assert.equal(summary.i18nFieldCount, 7);
@@ -516,7 +586,7 @@ assert.equal(summary.presentationParentLongname, "module:theme");
 
 assert.equal(searchIndex.length, 6);
 assert.equal(searchIndex.some((entry) => entry.kind === "typedef"), true);
-assert.equal(searchIndex.some((entry) => entry.sourceReferences === 2), true);
+assert.equal(searchIndex.some((entry) => entry.sourceReferences === 3), true);
 assert.equal(
   searchIndex.find((entry) => entry.name === "themeDemo").localizedSummaries["zh-CN"],
   "主题演示函数。"
@@ -532,6 +602,11 @@ assert.deepEqual(
 assert.deepEqual(
   navigationGroups[1].roots.map((node) => node.doclet.name),
   ["cycleAlpha", "cycleBeta"]
+);
+assert.equal(invalidPresentationNavigationGroups.length, 1);
+assert.deepEqual(
+  invalidPresentationNavigationGroups[0].roots[0].children.map((node) => node.doclet.name),
+  ["invalidProfile"]
 );
 assert.equal(pageI18n.enabled, true);
 assert.equal(pageI18nData.perLocalePages.en, "index.en.html");
@@ -554,18 +629,23 @@ assert.match(html, /class="nav-tree-children" data-hia-nav-branch open/);
 assert.match(html, /data-hia-stable-id="jsdoc:function:module:theme.themeDemo"/);
 assert.match(html, /href="#function-module:theme\.themedemo"[^>]*>themeDemo<\/a>/);
 assert.match(html, /data-hia-label="nav.containedSymbols" data-hia-label-count="3"/);
-assert.match(html, /data-hia-provenance="defined-in" data-hia-source-mode="link embed"/);
-assert.match(html, /data-hia-provenance="source-reference" data-hia-source-mode="link embed"/);
+assert.match(html, /data-hia-provenance="defined-in" data-hia-resolution="resolved" data-hia-source-mode="link embed"/);
+assert.match(html, /data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="resolved" data-hia-source-mode="link embed"/);
+assert.match(html, /data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="resolved" data-hia-source-mode="metadata"/);
+assert.match(html, /data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="unresolved" data-hia-source-mode="metadata"/);
 assert.match(html, /examples\/basic\/src\/demo\.js:12/);
 assert.match(html, /THEME_DEMO_BODY - examples\/basic\/src\/demo\.js:18-21/);
+assert.match(html, /METADATA_ONLY_FRAGMENT - examples\/basic\/src\/demo\.js:22/);
 assert.match(html, /href="https:\/\/example\.invalid\/repo\/examples\/basic\/src\/demo\.js#L18-L21"/);
 assert.match(html, /data-line="18"/);
 assert.match(html, /tok-keyword/);
 assert.match(html, /源码片段元数据缺失或未解析。/);
+assert.match(html, /data-hia-label="source.metadataOnly"/);
 assert.match(html, /hia-search-data/);
 assert.match(html, /hia-i18n-data/);
 assert.match(html, /hia-theme-data/);
 assert.match(html, /class="skip-link"/);
+assert.match(html, /<nav class="sidebar" aria-label="符号"/);
 assert.match(html, /aria-controls="hia-content"/);
 assert.match(html, /id="hia-content"/);
 assert.match(html, /data-hia-code-controls/);
@@ -587,6 +667,8 @@ assert.match(html, /Display name./);
 assert.match(html, /hia-theme\.js/);
 assert.doesNotMatch(html, /K:\\/);
 assert.doesNotMatch(html, /role="tree"|role="treeitem"/);
+assert.match(invalidPresentationHtml, /href="#function-module:theme\.invalidprofile"[^>]*>invalidProfile<\/a>/);
+assert.doesNotMatch(invalidPresentationHtml, /data-hia-stable-id="jsdoc:function:stale-profile"/);
 assert.match(html, /class="hia-skin hia-skin-classic"/);
 assert.match(html, /data-hia-skin="classic"/);
 assert.match(zhHtml, /<html lang="zh-CN">/);

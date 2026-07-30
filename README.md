@@ -129,6 +129,14 @@ otherwise it falls back to the JSDoc `memberof` field. Missing, self-referential
 or cyclic parent hints are rendered as root entries so every doclet remains
 reachable.
 
+For the `0.1.x` JPHS/JTH pair, the theme accepts a presentation hint only when
+its `identity.kind`, `identity.longname`, and deterministic
+`stableId` (`jsdoc:${kind}:${longname}`) match the current JSDoc doclet. A
+stale or malformed hint is ignored and therefore cannot change containment;
+the ordinary `memberof`/root fallback remains available. The companion
+`stableId` is not an HTML anchor: the existing fragment compatibility surface
+remains `kind-${slug(longname)}`.
+
 The hierarchy uses ordinary `<nav>`, list and native `<details>` disclosure
 elements. It deliberately does not emit an ARIA `tree`/`treeitem` model or
 custom tree keyboard behavior. Locale switching changes labels and localized
@@ -138,6 +146,12 @@ per-locale pages.
 ## Source Preview
 
 When used with `@mandolin/jsdoc-plugin-hia-sys`, definition source metadata is rendered in a `Source` section using relative paths. Explicit `@coderef` metadata is rendered separately in a `Source References` section. Both sections can display producer-approved file links, line links, range hints and collapsible embedded source previews. The theme does not fetch source content: `link` and controlled `embed` are the supported display modes, while `fetch` is not applicable.
+
+Each source reference exposes public-safe provenance, relation kind, resolution,
+and display-mode markers. An unresolved reference, or a resolved reference with
+metadata only, remains visible with an availability fallback and never receives
+a fabricated link or preview. These markers do not read a path, locator,
+sidecar, or source body.
 
 ## Multilingual Rendering
 

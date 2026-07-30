@@ -17,15 +17,17 @@ function getDocletI18n(doclet) {
 }
 
 /**
- * 读取可选 JPHS/JTH presentation companion profile，并拒绝未知 model/version 的 hint。
+ * 读取可选 JPHS/JTH presentation companion profile，并拒绝未知或 identity 不匹配的 hint。
  * Reads the optional JPHS/JTH presentation companion profile and rejects an
- * unknown model or version hint.
+ * unknown or identity-mismatched hint.
  *
  * @param {object} doclet JSDoc 文档节点 / JSDoc documentation node.
  * @returns {object|null} 已归一化的公开 navigation hint，或 null / Normalized public navigation hint, or null.
  */
 function getHiaPresentation(doclet) {
+  // <lang><zh-CN>先取得 doclet 的 HIA 容器；缺失容器时 profile 不能成为 navigation 的隐式输入。</zh-CN><en>Read the doclet's HIA container first; without it, a profile cannot become an implicit navigation input.</en></lang>
   const metadata = getHiaMetadata(doclet);
+  // <lang><zh-CN>presentation 只是 owner-pair 的可选 companion hint，不是通用 runtime contract。</zh-CN><en>Presentation is only an optional owner-pair companion hint, not a general runtime contract.</en></lang>
   const presentation = metadata && metadata.presentation;
 
   if (
@@ -37,15 +39,34 @@ function getHiaPresentation(doclet) {
     return null;
   }
 
+  // <lang><zh-CN>从当前 JSDoc 节点重建 P1 canonical kind；不信任 profile 自报的 kind。</zh-CN><en>Rebuild the P1 canonical kind from the current JSDoc node; do not trust the profile's self-reported kind.</en></lang>
+  const expectedKind = doclet && doclet.kind ? doclet.kind : "unknown";
+  // <lang><zh-CN>从当前节点重建 canonical longname，保持与 JPHS producer 的 deterministic fallback 完全一致。</zh-CN><en>Rebuild the canonical longname from the current node, exactly matching the JPHS producer's deterministic fallback.</en></lang>
+  const expectedLongname = doclet && (doclet.longname || doclet.name)
+    ? (doclet.longname || doclet.name)
+    : "anonymous";
+  // <lang><zh-CN>stableId 只验证 producer/consumer pair identity；它绝不替代 JTH 的 HTML fragment anchor。</zh-CN><en>The stableId validates producer/consumer-pair identity only; it never replaces JTH's HTML fragment anchor.</en></lang>
+  const expectedStableId = `jsdoc:${expectedKind}:${expectedLongname}`;
+  // <lang><zh-CN>identity 是 profile 的公共 metadata 子对象；非对象值必须安全降级而非被字符串化。</zh-CN><en>Identity is the profile's public metadata subobject; non-object values must safely degrade rather than be stringified.</en></lang>
   const identity = presentation.identity && typeof presentation.identity === "object"
     ? presentation.identity
     : {};
+  // <lang><zh-CN>navigation 仅在 identity 完整匹配后才可消费，避免 stale profile 改变 containment。</zh-CN><en>Navigation may be consumed only after identity matches completely, preventing a stale profile from changing containment.</en></lang>
   const navigation = presentation.navigation && typeof presentation.navigation === "object"
     ? presentation.navigation
     : {};
 
+  // <lang><zh-CN>model/version 正确但 identity 不一致仍视为不可信 hint；调用方会退回 plain JSDoc memberof/root。</zh-CN><en>A model/version-correct but identity-mismatched value is still an untrusted hint; callers fall back to plain JSDoc memberof/root.</en></lang>
+  if (
+    identity.kind !== expectedKind ||
+    identity.longname !== expectedLongname ||
+    identity.stableId !== expectedStableId
+  ) {
+    return null;
+  }
+
   return {
-    stableId: typeof identity.stableId === "string" ? identity.stableId : "",
+    stableId: expectedStableId,
     parentLongname: typeof navigation.parentLongname === "string" ? navigation.parentLongname : "",
     group: typeof navigation.group === "string" ? navigation.group : ""
   };

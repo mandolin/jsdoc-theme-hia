@@ -105,6 +105,7 @@ const UI_LABELS = {
     "source.preview": "Source preview",
     "source.unresolved": "Source fragment metadata is missing or unresolved.",
     "source.previewDisabled": "Source preview is disabled for this fragment.",
+    "source.metadataOnly": "No public source link or preview is available for this metadata.",
     "source.definedIn": "Defined in",
     "source.reference": "Reference {index}",
     "table.name": "Name",
@@ -178,6 +179,7 @@ const UI_LABELS = {
     "source.preview": "源码预览",
     "source.unresolved": "源码片段元数据缺失或未解析。",
     "source.previewDisabled": "此源码片段的预览已禁用。",
+    "source.metadataOnly": "该元数据没有可公开呈现的源码链接或预览。",
     "source.definedIn": "定义于",
     "source.reference": "引用 {index}",
     "table.name": "名称",
@@ -1119,26 +1121,38 @@ function formatSourceLocation(fragment) {
  * @returns {string} source section HTML / 源码区段 HTML.
  */
 function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
+  // <lang><zh-CN>读取 producer 已附带的 source metadata；renderer 不会由 doclet 名称或路径猜测并读取源码。</zh-CN><en>Read producer-carried source metadata; the renderer never guesses and reads source from a doclet name or path.</en></lang>
   const source = getDocletSource(doclet);
 
   if (!source || (!source.definedIn && !source.primaryBlock)) {
     return "";
   }
 
+  // <lang><zh-CN>definedIn 优先，primaryBlock 仅作为已有 metadata 的位置回退，不创建新的 provenance。</zh-CN><en>Prefer definedIn; primaryBlock is only a location fallback from existing metadata and creates no new provenance.</en></lang>
   const definedIn = source.definedIn || source.primaryBlock;
+  // <lang><zh-CN>primary block 可能包含 producer 批准的 embed preview；其缺失不会触发外部读取。</zh-CN><en>The primary block may contain a producer-approved embed preview; its absence never triggers an external read.</en></lang>
   const primaryBlock = source.primaryBlock;
+  // <lang><zh-CN>位置文本只来自 public-safe relative metadata，用于人读 provenance caption。</zh-CN><en>Location text comes only from public-safe relative metadata for the human-readable provenance caption.</en></lang>
   const definedInText = formatSourceLocation(definedIn);
+  // <lang><zh-CN>link 是 producer 提供的可选 URL metadata；enabled 但无 URL 时不会被补全。</zh-CN><en>Link is optional URL metadata supplied by the producer; an enabled link without a URL is never completed.</en></lang>
   const link = (definedIn && definedIn.link) || {};
+  // <lang><zh-CN>preview 仅指向已有 primary block preview metadata，绝不从 source/reference 反查正文。</zh-CN><en>Preview points only to existing primary-block preview metadata and never looks up a body from source/reference data.</en></lang>
   const preview = primaryBlock && primaryBlock.preview ? primaryBlock.preview : null;
+  // <lang><zh-CN>canPreview 是 embed 的严格许可条件：producer 未禁用且正文已在 metadata 中。</zh-CN><en>canPreview is the strict embed permission: the producer has not disabled it and content is already in metadata.</en></lang>
   const canPreview = primaryBlock && preview && preview.enabled !== false && typeof preview.content === "string";
+  // <lang><zh-CN>sourceMode 只描述被动可呈现能力；metadata 表示不能公开 link 或 embed，绝不意味着 fetch。</zh-CN><en>sourceMode describes passive presentable capability only; metadata means no public link/embed and never implies fetch.</en></lang>
   const sourceMode = getSourceDisplayModes(link, canPreview ? preview : null);
+  // <lang><zh-CN>metadata-only fallback 让用户看见受限状态，同时不泄漏 locator、路径以外信息或正文。</zh-CN><en>The metadata-only fallback exposes the restricted state without leaking locators, data beyond a safe path, or bodies.</en></lang>
+  const availabilityFallback = renderSourceAvailabilityFallback(sourceMode, labels);
+  // <lang><zh-CN>body 只组合 producer metadata 的公开投影；没有网络、filesystem 或 sidecar I/O。</zh-CN><en>Body combines only public projections of producer metadata; it performs no network, filesystem, or sidecar I/O.</en></lang>
   const body = [
-    `  <div class="source-reference primary-source" data-hia-provenance="defined-in" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
+    `  <div class="source-reference primary-source" data-hia-provenance="defined-in" data-hia-resolution="resolved" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
     `    <div class="source-caption"><span ${renderLabelAttributes("source.definedIn")}>${escapeHtml(formatUiLabel(labels, "source.definedIn"))}</span>${definedInText ? ` - ${escapeHtml(definedInText)}` : ""}</div>`,
     definedIn ? renderSourceLinks(definedIn, link, labels) : "",
     canPreview
       ? renderSourcePreview(primaryBlock, preview, labels)
       : "",
+    availabilityFallback,
     "  </div>"
   ].filter(Boolean).join("\n");
 
@@ -1172,35 +1186,82 @@ function renderSourceReferences(doclet, labels = UI_LABELS.en, renderOptions = {
  * @returns {string} source-reference HTML / source-reference HTML.
  */
 function renderSourceReference(reference, index, labels = UI_LABELS.en) {
-  const fragment = reference.fragment;
+  // <lang><zh-CN>只接受 object-shaped producer record；其他输入安全退化为 unresolved，不执行 coercion 或读取。</zh-CN><en>Accept only an object-shaped producer record; all other input safely degrades to unresolved without coercion or reads.</en></lang>
+  const safeReference = reference && typeof reference === "object" ? reference : {};
+  // <lang><zh-CN>fragment 只在 object-shaped 时参与公开渲染，避免 malformed metadata 触发属性访问异常。</zh-CN><en>A fragment participates in public rendering only when object-shaped, preventing malformed metadata from causing property-access failures.</en></lang>
+  const fragment = safeReference.fragment && typeof safeReference.fragment === "object"
+    ? safeReference.fragment
+    : null;
+  // <lang><zh-CN>resolution 保持独立于 provenance：只有 producer 明确 resolved 且有 fragment 才可呈现 link/embed。</zh-CN><en>Resolution remains independent from provenance: link/embed may render only when the producer explicitly resolves and supplies a fragment.</en></lang>
+  const resolution = safeReference.resolved === true && fragment ? "resolved" : "unresolved";
+  // <lang><zh-CN>fallbackCaption 是 locale-aware display label，不是 target identity 或 locator。</zh-CN><en>fallbackCaption is a locale-aware display label, not a target identity or locator.</en></lang>
   const fallbackCaption = formatUiLabel(labels, "source.reference", { index: index + 1 });
-  const caption = fragment
-    ? `${fragment.id || reference.targetId || fallbackCaption} - ${fragment.relativePath || "source"}:${fragment.range.start.line}-${fragment.range.end.line}`
-    : `${reference.targetId || fallbackCaption} - unresolved`;
+  // <lang><zh-CN>targetId 只用于缺少 fragment 时的公开诊断标题；不存在时保留本地化 fallback。</zh-CN><en>targetId is used only for a public diagnostic caption when a fragment is absent; otherwise retain the localized fallback.</en></lang>
+  const targetId = typeof safeReference.targetId === "string" ? safeReference.targetId : "";
+  // <lang><zh-CN>range 仅在 fragment 中是 object-shaped 时读取；不完整 range 仍可安全展示 metadata。</zh-CN><en>Range is read only when object-shaped in the fragment; an incomplete range can still safely show metadata.</en></lang>
+  const range = fragment && fragment.range && typeof fragment.range === "object" ? fragment.range : {};
+  // <lang><zh-CN>startLine 只接受整数行号，避免将任意值嵌入 HTML caption。</zh-CN><en>startLine accepts only an integer line number, preventing arbitrary values from entering the HTML caption.</en></lang>
+  const startLine = range.start && Number.isInteger(range.start.line) ? range.start.line : null;
+  // <lang><zh-CN>endLine 是可选结束行；缺失或等于起始行时不虚构范围。</zh-CN><en>endLine is an optional ending line; when absent or equal to the start line, no range is fabricated.</en></lang>
+  const endLine = range.end && Number.isInteger(range.end.line) ? range.end.line : null;
+  // <lang><zh-CN>rangeText 只补充已验证的整数范围，并保持旧的 path:start-end 人读格式。</zh-CN><en>rangeText adds only validated integer ranges and retains the existing path:start-end human-readable format.</en></lang>
+  const rangeText = startLine === null ? "" : `:${startLine}${endLine && endLine !== startLine ? `-${endLine}` : ""}`;
+  // <lang><zh-CN>location 仅保留 producer 的 relativePath；没有相对路径时以通用 source 标识降级。</zh-CN><en>location retains only the producer's relativePath; without one it degrades to a generic source label.</en></lang>
+  const location = fragment && typeof fragment.relativePath === "string" && fragment.relativePath
+    ? `${fragment.relativePath}${rangeText}`
+    : "source";
+  // <lang><zh-CN>caption 不把 unresolved target 当成已解析 relation；resolved 也只显示已有 public metadata。</zh-CN><en>Caption never treats an unresolved target as a resolved relation; resolved captions also show only existing public metadata.</en></lang>
+  const caption = resolution === "resolved"
+    ? `${fragment.id || targetId || fallbackCaption} - ${location}`
+    : `${targetId || fallbackCaption} - unresolved`;
 
-  if (!fragment) {
+  if (resolution !== "resolved") {
     return [
-      '<div class="source-reference unresolved">',
+      '<div class="source-reference unresolved" data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="unresolved" data-hia-source-mode="metadata">',
       `  <div class="source-caption">${escapeHtml(caption)}</div>`,
       `  <p class="source-fallback" ${renderLabelAttributes("source.unresolved")}>${escapeHtml(formatUiLabel(labels, "source.unresolved"))}</p>`,
       "</div>"
     ].join("\n");
   }
 
+  // <lang><zh-CN>preview 是 resolved fragment 的已有 metadata；它不允许 consumer 主动补取 source body。</zh-CN><en>Preview is existing metadata on a resolved fragment; it does not permit the consumer to retrieve a source body.</en></lang>
   const preview = fragment.preview || {};
+  // <lang><zh-CN>link 是 resolved fragment 的 producer-approved public link metadata。</zh-CN><en>Link is producer-approved public link metadata for the resolved fragment.</en></lang>
   const link = fragment.link || {};
+  // <lang><zh-CN>canPreview 是受控 embed 的许可条件，与 resolution/provenance 分开计算。</zh-CN><en>canPreview is the permission condition for controlled embed, calculated separately from resolution/provenance.</en></lang>
   const canPreview = preview.enabled !== false && typeof preview.content === "string";
+  // <lang><zh-CN>sourceMode 仅枚举现有 link/embed 或 metadata，不包含 fetch。</zh-CN><en>sourceMode enumerates only existing link/embed or metadata and never includes fetch.</en></lang>
   const sourceMode = getSourceDisplayModes(link, canPreview ? preview : null);
+  // <lang><zh-CN>availabilityFallback 只在 metadata-only 时解释不可用性；link-only 继续可用而无需伪造 preview。</zh-CN><en>availabilityFallback explains only metadata-only unavailability; link-only remains usable without fabricating a preview.</en></lang>
+  const availabilityFallback = renderSourceAvailabilityFallback(sourceMode, labels);
 
   return [
-    `<div class="source-reference" data-hia-provenance="source-reference" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
+    `<div class="source-reference" data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="resolved" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
     `  <div class="source-caption">${escapeHtml(caption)}</div>`,
     renderSourceLinks(fragment, link, labels),
     canPreview
       ? renderSourcePreview(fragment, preview, labels)
-      : `  <p class="source-fallback" ${renderLabelAttributes("source.previewDisabled")}>${escapeHtml(formatUiLabel(labels, "source.previewDisabled"))}</p>`,
+      : availabilityFallback || `  <p class="source-fallback" ${renderLabelAttributes("source.previewDisabled")}>${escapeHtml(formatUiLabel(labels, "source.previewDisabled"))}</p>`,
     "</div>"
   ].filter(Boolean).join("\n");
+}
+
+/**
+ * 呈现 metadata-only source availability fallback；它解释未公开 link/embed，不读取或请求 source。
+ * Renders a metadata-only source-availability fallback; it explains absent
+ * public link/embed without reading or requesting source.
+ *
+ * @param {string} sourceMode producer-approved source display mode / Producer-approved source display mode.
+ * @param {object} labels 当前 UI labels / Current UI labels.
+ * @returns {string} metadata-only fallback HTML，其他模式为空 / Metadata-only fallback HTML, or empty for other modes.
+ */
+function renderSourceAvailabilityFallback(sourceMode, labels = UI_LABELS.en) {
+  // <lang><zh-CN>只有 metadata 模式需要不可用性说明；link/embed 本身已提供可理解的可用入口。</zh-CN><en>Only metadata mode needs an availability explanation; link/embed already provide understandable available entry points.</en></lang>
+  if (sourceMode !== "metadata") {
+    return "";
+  }
+
+  return `  <p class="source-fallback" ${renderLabelAttributes("source.metadataOnly")}>${escapeHtml(formatUiLabel(labels, "source.metadataOnly"))}</p>`;
 }
 
 function renderSourceLinks(fragment, link, labels = UI_LABELS.en) {
