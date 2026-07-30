@@ -352,6 +352,44 @@ summary:focus-visible,
   text-decoration: none;
 }
 
+/*
+ * 原生 disclosure navigation 保留普通 list/link semantics；不使用 ARIA tree 样式或角色。
+ * Native disclosure navigation retains ordinary list/link semantics; it does
+ * not style or role-model an ARIA tree.
+ */
+.nav-tree-root,
+.nav-tree-children ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-tree-item {
+  min-width: 0;
+}
+
+.nav-tree-children {
+  margin: 2px 0 0 10px;
+  padding-left: 9px;
+  border-left: 1px solid var(--border);
+}
+
+.nav-tree-children summary {
+  min-height: 26px;
+  padding: 4px 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.nav-tree-children summary:hover {
+  color: var(--link-hover);
+  background: var(--accent-soft);
+}
+
 .content {
   display: grid;
   gap: 16px;

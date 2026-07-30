@@ -32,12 +32,21 @@
 
   const links = Array.from(document.querySelectorAll(".nav-group a"));
   const groups = Array.from(document.querySelectorAll(".nav-group"));
+  const navigationItems = Array.from(document.querySelectorAll(".nav-tree-item"));
+  const navigationBranches = Array.from(document.querySelectorAll("[data-hia-nav-branch]"));
   const articles = Array.from(document.querySelectorAll(".doclet"));
 
   function setVisible(element, visible) {
     element.hidden = !visible;
   }
 
+  /**
+   * 同步 search visibility，并在有查询时展开匹配项的 native disclosure ancestor。
+   * Synchronizes search visibility and expands native disclosure ancestors for
+   * matching entries while a query is present.
+   *
+   * @returns {void}
+   */
   function update() {
     const query = input.value.trim().toLowerCase();
     const visibleIds = new Set(
@@ -53,6 +62,22 @@
     for (const link of links) {
       const targetId = decodeURIComponent((link.getAttribute("href") || "").replace(/^#/, ""));
       setVisible(link, visibleIds.has(targetId));
+    }
+
+    // 搜索命中时展开 native disclosure ancestor，并隐藏没有可见后代的 list item。
+    // On search hits, expand native disclosure ancestors and hide list items
+    // without a visible descendant.
+    for (const item of navigationItems) {
+      const hasVisibleLink = Array.from(item.querySelectorAll("a")).some((link) => !link.hidden);
+      setVisible(item, hasVisibleLink);
+    }
+
+    for (const branch of navigationBranches) {
+      const hasVisibleLink = Array.from(branch.querySelectorAll("a")).some((link) => !link.hidden);
+
+      if (query && hasVisibleLink) {
+        branch.open = true;
+      }
     }
 
     for (const group of groups) {

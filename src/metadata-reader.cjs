@@ -16,6 +16,41 @@ function getDocletI18n(doclet) {
   return metadata.i18n;
 }
 
+/**
+ * 读取可选 JPHS/JTH presentation companion profile，并拒绝未知 model/version 的 hint。
+ * Reads the optional JPHS/JTH presentation companion profile and rejects an
+ * unknown model or version hint.
+ *
+ * @param {object} doclet JSDoc 文档节点 / JSDoc documentation node.
+ * @returns {object|null} 已归一化的公开 navigation hint，或 null / Normalized public navigation hint, or null.
+ */
+function getHiaPresentation(doclet) {
+  const metadata = getHiaMetadata(doclet);
+  const presentation = metadata && metadata.presentation;
+
+  if (
+    !presentation ||
+    typeof presentation !== "object" ||
+    presentation.model !== "hia-jsdoc-presentation" ||
+    presentation.modelVersion !== "0.1.0"
+  ) {
+    return null;
+  }
+
+  const identity = presentation.identity && typeof presentation.identity === "object"
+    ? presentation.identity
+    : {};
+  const navigation = presentation.navigation && typeof presentation.navigation === "object"
+    ? presentation.navigation
+    : {};
+
+  return {
+    stableId: typeof identity.stableId === "string" ? identity.stableId : "",
+    parentLongname: typeof navigation.parentLongname === "string" ? navigation.parentLongname : "",
+    group: typeof navigation.group === "string" ? navigation.group : ""
+  };
+}
+
 function normalizeLocaleList(value) {
   if (Array.isArray(value)) {
     return value.filter((locale) => typeof locale === "string" && locale.trim());
@@ -205,6 +240,14 @@ function collectPageI18n(doclets) {
   };
 }
 
+/**
+ * 汇总 renderer 可公开呈现的 HIA metadata，不把 raw metadata 当作 UI contract 透传。
+ * Summarizes HIA metadata safe for renderer presentation without passing raw
+ * metadata through as a UI contract.
+ *
+ * @param {object} doclet JSDoc 文档节点 / JSDoc documentation node.
+ * @returns {object} safe presentation summary / 安全呈现摘要.
+ */
 function summarizeHiaMetadata(doclet) {
   const metadata = getHiaMetadata(doclet);
 
@@ -217,6 +260,8 @@ function summarizeHiaMetadata(doclet) {
       sourcePrimaryBlock: null,
       sourcePreviewEnabled: false,
       sourceLinkEnabled: false,
+      presentationStableId: "",
+      presentationParentLongname: "",
       locales: [],
       defaultLocale: "",
       fallbackLocale: "",
@@ -232,6 +277,7 @@ function summarizeHiaMetadata(doclet) {
   const fields = getI18nFields(i18n);
   const primaryBlock = source.primaryBlock || null;
   const definedIn = source.definedIn || null;
+  const presentation = getHiaPresentation(doclet);
 
   return {
     hasHia: true,
@@ -247,6 +293,8 @@ function summarizeHiaMetadata(doclet) {
       (definedIn && definedIn.link && definedIn.link.enabled) ||
       (source.link && source.link.enabled)
     ),
+    presentationStableId: presentation ? presentation.stableId : "",
+    presentationParentLongname: presentation ? presentation.parentLongname : "",
     locales: Array.isArray(i18n.locales) ? i18n.locales : [],
     defaultLocale: i18n.defaultLocale || "",
     fallbackLocale: normalizeLocaleList(i18n.fallbackLocale)[0] || "",
@@ -260,6 +308,7 @@ module.exports = {
   collectPageI18n,
   getDocletI18n,
   getHiaMetadata,
+  getHiaPresentation,
   getLocalizedFieldEntry,
   getLocalizedEntry,
   getTextI18nField,

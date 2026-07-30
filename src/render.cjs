@@ -3,6 +3,7 @@
 const {
   collectPageI18n,
   getDocletI18n,
+  getHiaPresentation,
   getLocalizedFieldEntry,
   getLocalizedEntry,
   summarizeHiaMetadata
@@ -77,6 +78,7 @@ const UI_LABELS = {
     "header.eyebrow": "API Documentation",
     "summary.symbols": "{count} symbols",
     "nav.symbols": "Symbols",
+    "nav.containedSymbols": "{count} contained symbols",
     "search.label": "Search symbols",
     "search.placeholder": "Filter by name, kind, or summary",
     "empty.symbols": "No document symbols.",
@@ -149,6 +151,7 @@ const UI_LABELS = {
     "header.eyebrow": "API 文档",
     "summary.symbols": "{count} 个符号",
     "nav.symbols": "符号",
+    "nav.containedSymbols": "包含 {count} 个符号",
     "search.label": "搜索符号",
     "search.placeholder": "按名称、类型或摘要筛选",
     "empty.symbols": "没有文档符号。",
@@ -523,6 +526,149 @@ function groupDoclets(doclets) {
       kind,
       label: getKindLabel(kind),
       doclets: groups.get(kind)
+    }));
+}
+
+/**
+ * 取得同页 navigation parent；已验证的 companion profile 优先，普通 JSDoc memberof 为兼容回退。
+ * Gets the same-page navigation parent; a validated companion profile takes
+ * precedence and plain JSDoc memberof remains the compatibility fallback.
+ *
+ * @param {object} doclet JSDoc 文档节点 / JSDoc documentation node.
+ * @returns {string} parent longname，缺失时为空 / Parent longname, or empty when absent.
+ */
+function getNavigationParentLongname(doclet) {
+  const presentation = getHiaPresentation(doclet);
+  const profileParent = presentation && presentation.parentLongname;
+
+  return String(profileParent || doclet.memberof || "").trim();
+}
+
+/**
+ * 找出 parent graph 的真正 cycle member，使无效 containment 不会导致递归渲染或节点丢失。
+ * Finds actual cycle members in the parent graph so invalid containment cannot
+ * cause recursive rendering or lose a documentation node.
+ *
+ * @param {Array<object>} nodes 已建立 parent 指针的 navigation nodes / Navigation nodes with parent pointers.
+ * @returns {Set<object>} 需要退回 root 的 cycle member / Cycle members that must fall back to root.
+ */
+function collectNavigationCycleNodes(nodes) {
+  const cycleNodes = new Set();
+
+  for (const node of nodes) {
+    const visited = new Map();
+    const path = [];
+    let current = node;
+
+    while (current && !cycleNodes.has(current)) {
+      if (visited.has(current)) {
+        // 只将闭环中的节点降级为 root；指向它的正常后代仍可保留。
+        // Only cycle members fall back to root; valid descendants pointing at them remain.
+        for (const cycleNode of path.slice(visited.get(current))) {
+          cycleNodes.add(cycleNode);
+        }
+        break;
+      }
+
+      visited.set(current, path.length);
+      path.push(current);
+      current = current.parent;
+    }
+  }
+
+  return cycleNodes;
+}
+
+/**
+ * 建立 deterministic disclosure navigation；它是同页 containment 视图，不定义 inheritance/composition。
+ * Builds deterministic disclosure navigation; it is a same-page containment
+ * view and does not define inheritance or composition.
+ *
+ * @param {Array<object>} doclets JSDoc 文档节点 / JSDoc documentation nodes.
+ * @returns {Array<object>} 按 root kind 分组的 hierarchy / Hierarchy grouped by root kind.
+ */
+function buildNavigationGroups(doclets) {
+  const nodes = sortDoclets(doclets).map((doclet) => ({
+    doclet,
+    children: [],
+    parent: null,
+    stableId: (getHiaPresentation(doclet) || {}).stableId || ""
+  }));
+  const nodesByLongname = new Map();
+
+  for (const node of nodes) {
+    const longname = String(node.doclet.longname || node.doclet.name || "").trim();
+
+    if (longname && !nodesByLongname.has(longname)) {
+      nodesByLongname.set(longname, node);
+    }
+  }
+
+  for (const node of nodes) {
+    const parentLongname = getNavigationParentLongname(node.doclet);
+    const parent = parentLongname ? nodesByLongname.get(parentLongname) : null;
+
+    if (parent && parent !== node) {
+      node.parent = parent;
+    }
+  }
+
+  const cycleNodes = collectNavigationCycleNodes(nodes);
+
+  for (const node of cycleNodes) {
+    node.parent = null;
+  }
+
+  const roots = [];
+
+  for (const node of nodes) {
+    if (node.parent) {
+      node.parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const compareNodes = (left, right) => {
+    const leftKind = KIND_ORDER.indexOf(normalizeKind(left.doclet.kind));
+    const rightKind = KIND_ORDER.indexOf(normalizeKind(right.doclet.kind));
+
+    if (leftKind !== rightKind) {
+      return leftKind - rightKind;
+    }
+
+    return getDocletTitle(left.doclet).localeCompare(getDocletTitle(right.doclet));
+  };
+  const sortNodes = (items) => items.sort(compareNodes);
+  const sortChildren = (node) => {
+    sortNodes(node.children);
+
+    for (const child of node.children) {
+      sortChildren(child);
+    }
+  };
+  const groups = new Map();
+
+  for (const root of sortNodes(roots)) {
+    sortChildren(root);
+    const kind = normalizeKind(root.doclet.kind);
+
+    if (!groups.has(kind)) {
+      groups.set(kind, []);
+    }
+
+    groups.get(kind).push(root);
+  }
+
+  const countNodes = (items) => items.reduce((count, item) => count + 1 + countNodes(item.children), 0);
+
+  return KIND_ORDER
+    .filter((kind) => groups.has(kind))
+    .map((kind) => ({
+      kind,
+      label: getKindLabel(kind),
+      roots: groups.get(kind),
+      nodeCount: countNodes(groups.get(kind))
     }));
 }
 
@@ -927,6 +1073,29 @@ function getDocletSource(doclet) {
     : null;
 }
 
+/**
+ * 将 producer 已批准的 source display capability 显式投影为 artifact marker；consumer 不发起读取。
+ * Projects producer-approved source display capability into an artifact marker;
+ * the consumer never initiates a read.
+ *
+ * @param {object} link source link metadata / 源码链接 metadata。
+ * @param {object|null} preview source preview metadata / 源码预览 metadata。
+ * @returns {string} `link`、`embed` 或 `metadata` 的确定组合 / Deterministic link, embed, or metadata combination.
+ */
+function getSourceDisplayModes(link = {}, preview = null) {
+  const modes = [];
+
+  if (link.enabled && (link.fileUrl || link.lineUrl)) {
+    modes.push("link");
+  }
+
+  if (preview && preview.enabled !== false && typeof preview.content === "string") {
+    modes.push("embed");
+  }
+
+  return modes.length ? modes.join(" ") : "metadata";
+}
+
 function formatSourceLocation(fragment) {
   if (!fragment || !fragment.relativePath) {
     return "";
@@ -939,6 +1108,16 @@ function formatSourceLocation(fragment) {
   return line ? `${fragment.relativePath}:${line}` : fragment.relativePath;
 }
 
+/**
+ * 呈现定义位置 provenance；只消费 producer 已带入的 link/embed metadata，不读取源码。
+ * Renders definition-location provenance using only producer-carried link/embed
+ * metadata and never reads source content.
+ *
+ * @param {object} doclet JSDoc 文档节点 / JSDoc documentation node.
+ * @param {object} labels 当前 UI labels / Current UI labels.
+ * @param {object} renderOptions renderer options / 渲染选项.
+ * @returns {string} source section HTML / 源码区段 HTML.
+ */
 function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
   const source = getDocletSource(doclet);
 
@@ -952,8 +1131,9 @@ function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
   const link = (definedIn && definedIn.link) || {};
   const preview = primaryBlock && primaryBlock.preview ? primaryBlock.preview : null;
   const canPreview = primaryBlock && preview && preview.enabled !== false && typeof preview.content === "string";
+  const sourceMode = getSourceDisplayModes(link, canPreview ? preview : null);
   const body = [
-    '  <div class="source-reference primary-source">',
+    `  <div class="source-reference primary-source" data-hia-provenance="defined-in" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
     `    <div class="source-caption"><span ${renderLabelAttributes("source.definedIn")}>${escapeHtml(formatUiLabel(labels, "source.definedIn"))}</span>${definedInText ? ` - ${escapeHtml(definedInText)}` : ""}</div>`,
     definedIn ? renderSourceLinks(definedIn, link, labels) : "",
     canPreview
@@ -981,6 +1161,16 @@ function renderSourceReferences(doclet, labels = UI_LABELS.en, renderOptions = {
   });
 }
 
+/**
+ * 呈现 explicit source reference；未解析 relation 仍可见，但不伪造 link 或 preview。
+ * Renders an explicit source reference; unresolved relations remain visible
+ * without fabricating a link or preview.
+ *
+ * @param {object} reference producer reference metadata / producer 引用 metadata.
+ * @param {number} index display index / 显示序号.
+ * @param {object} labels 当前 UI labels / Current UI labels.
+ * @returns {string} source-reference HTML / source-reference HTML.
+ */
 function renderSourceReference(reference, index, labels = UI_LABELS.en) {
   const fragment = reference.fragment;
   const fallbackCaption = formatUiLabel(labels, "source.reference", { index: index + 1 });
@@ -1000,9 +1190,10 @@ function renderSourceReference(reference, index, labels = UI_LABELS.en) {
   const preview = fragment.preview || {};
   const link = fragment.link || {};
   const canPreview = preview.enabled !== false && typeof preview.content === "string";
+  const sourceMode = getSourceDisplayModes(link, canPreview ? preview : null);
 
   return [
-    '<div class="source-reference">',
+    `<div class="source-reference" data-hia-provenance="source-reference" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
     `  <div class="source-caption">${escapeHtml(caption)}</div>`,
     renderSourceLinks(fragment, link, labels),
     canPreview
@@ -1164,6 +1355,51 @@ function renderDoclet(doclet, pageI18n, renderOptions = {}) {
     .join("\n");
 }
 
+/**
+ * 渲染 native disclosure navigation，保持普通 anchor 和 list semantics，绝不模拟 ARIA tree。
+ * Renders native disclosure navigation while retaining ordinary anchors and
+ * list semantics; it never simulates an ARIA tree.
+ *
+ * @param {object} node navigation node / 导航节点。
+ * @param {object} labels 当前 UI labels / Current UI labels.
+ * @param {number} depth 同页层级，仅用于 style/debug marker / Same-page depth for style/debug marker only.
+ * @returns {string} HTML list item / HTML list item.
+ */
+function renderNavigationNode(node, labels = UI_LABELS.en, depth = 0) {
+  const doclet = node.doclet;
+  const label = doclet.name || doclet.longname || "(anonymous)";
+  const stableId = node.stableId ? ` data-hia-stable-id="${escapeHtml(node.stableId)}"` : "";
+  const link = `<a class="nav-tree-link" href="#${escapeHtml(getDocletId(doclet))}"${stableId}>${escapeHtml(label)}</a>`;
+
+  if (!node.children.length) {
+    return `<li class="nav-tree-item" data-hia-nav-depth="${depth}">${link}</li>`;
+  }
+
+  const childCount = node.children.length;
+  const childLabel = formatUiLabel(labels, "nav.containedSymbols", { count: childCount });
+
+  return [
+    `<li class="nav-tree-item has-children" data-hia-nav-depth="${depth}">`,
+    `  ${link}`,
+    '  <details class="nav-tree-children" data-hia-nav-branch open>',
+    `    <summary ${renderLabelAttributes("nav.containedSymbols", { count: childCount })}>${escapeHtml(childLabel)}</summary>`,
+    "    <ul>",
+    node.children.map((child) => `      ${renderNavigationNode(child, labels, depth + 1)}`).join("\n"),
+    "    </ul>",
+    "  </details>",
+    "</li>"
+  ].join("\n");
+}
+
+/**
+ * 渲染按 root kind 分组的 hierarchy；空输入保留现有 no-symbol fallback。
+ * Renders hierarchy grouped by root kind; empty input retains the existing
+ * no-symbol fallback.
+ *
+ * @param {Array<object>} groups navigation hierarchy groups / 导航层级分组。
+ * @param {object} labels 当前 UI labels / Current UI labels.
+ * @returns {string} navigation HTML / 导航 HTML.
+ */
 function renderNavigation(groups, labels = UI_LABELS.en) {
   if (!groups.length) {
     return `<p class="empty" ${renderLabelAttributes("empty.symbols")}>${escapeHtml(formatUiLabel(labels, "empty.symbols"))}</p>`;
@@ -1175,10 +1411,10 @@ function renderNavigation(groups, labels = UI_LABELS.en) {
 
     return [
       '<section class="nav-group">',
-      `  <h2><span ${renderLabelAttributes(labelKey)}>${escapeHtml(groupLabel)}</span> <span>${group.doclets.length}</span></h2>`,
-      group.doclets
-        .map((doclet) => `<a href="#${escapeHtml(getDocletId(doclet))}">${escapeHtml(doclet.name || doclet.longname || "(anonymous)")}</a>`)
-        .join("\n"),
+      `  <h2><span ${renderLabelAttributes(labelKey)}>${escapeHtml(groupLabel)}</span> <span>${group.nodeCount}</span></h2>`,
+      "  <ul class=\"nav-tree-root\">",
+      group.roots.map((node) => `    ${renderNavigationNode(node, labels)}`).join("\n"),
+      "  </ul>",
       "</section>"
     ].join("\n");
   }).join("\n");
@@ -1294,11 +1530,19 @@ function renderLanguageControls(pageI18n, renderOptions = {}, labels = UI_LABELS
   ].join("\n");
 }
 
+/**
+ * 生成单页 native JSDoc HTML；locale 不改变 stable fragment anchor 或 hierarchy identity。
+ * Generates one native JSDoc HTML page; locale does not change stable fragment
+ * anchors or hierarchy identity.
+ *
+ * @param {object} options renderer input / renderer 输入。
+ * @returns {string} complete HTML document / 完整 HTML 文档.
+ */
 function renderPage(options) {
   const title = options.title || "HIA JSDoc";
   const doclets = sortDoclets(options.doclets || []);
   const pageI18n = collectPageI18n(doclets);
-  const groups = groupDoclets(doclets);
+  const groups = buildNavigationGroups(doclets);
   const renderOptions = {
     locale: options.locale || "",
     theme: normalizeThemeOptions(options.theme || {})
@@ -1358,6 +1602,7 @@ function renderPage(options) {
 module.exports = {
   buildI18nPageData,
   buildSearchIndex,
+  buildNavigationGroups,
   escapeHtml,
   getDocletId,
   groupDoclets,

@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const {
   buildI18nPageData,
+  buildNavigationGroups,
   buildSearchIndex,
   renderPage
 } = require("../src/render.cjs");
@@ -57,6 +58,19 @@ const doclet = {
   ],
   hia: {
     microPlugins: ["code-fragment", "source-link", "source-preview", "doc-i18n"],
+    presentation: {
+      model: "hia-jsdoc-presentation",
+      modelVersion: "0.1.0",
+      identity: {
+        stableId: "jsdoc:function:module:theme.themeDemo",
+        kind: "function",
+        longname: "module:theme.themeDemo"
+      },
+      navigation: {
+        parentLongname: "module:theme",
+        group: "function"
+      }
+    },
     source: {
       definedIn: {
         kind: "defined-in",
@@ -290,7 +304,22 @@ const moduleDoclet = {
   kind: "module",
   name: "theme",
   longname: "module:theme",
-  description: "Theme module."
+  description: "Theme module.",
+  hia: {
+    presentation: {
+      model: "hia-jsdoc-presentation",
+      modelVersion: "0.1.0",
+      identity: {
+        stableId: "jsdoc:module:module:theme",
+        kind: "module",
+        longname: "module:theme"
+      },
+      navigation: {
+        parentLongname: "",
+        group: "module"
+      }
+    }
+  }
 };
 
 const typedefDoclet = {
@@ -306,27 +335,108 @@ const typedefDoclet = {
       description: "Preferred locale."
     }
   ],
-  description: "Theme options."
+  description: "Theme options.",
+  memberof: "module:theme",
+  hia: {
+    presentation: {
+      model: "hia-jsdoc-presentation",
+      modelVersion: "0.1.0",
+      identity: {
+        stableId: "jsdoc:typedef:module:theme.ThemeOptions",
+        kind: "typedef",
+        longname: "module:theme.ThemeOptions"
+      },
+      navigation: {
+        parentLongname: "module:theme",
+        group: "typedef"
+      }
+    }
+  }
 };
+
+// 无 companion profile 的 child 必须继续以 plain JSDoc memberof 进入 hierarchy。
+// A child without the companion profile must still enter the hierarchy through plain JSDoc memberof.
+const fallbackMemberDoclet = {
+  kind: "function",
+  name: "plainFallback",
+  longname: "module:theme.plainFallback",
+  memberof: "module:theme",
+  description: "Plain JSDoc containment fallback."
+};
+
+// Cycle hints 只降级为 root，既不造成递归也不丢失 node。
+// Cycle hints fall back to roots only; they neither recurse nor lose a node.
+const cycleAlphaDoclet = {
+  kind: "function",
+  name: "cycleAlpha",
+  longname: "cycleAlpha",
+  description: "Cycle alpha.",
+  hia: {
+    presentation: {
+      model: "hia-jsdoc-presentation",
+      modelVersion: "0.1.0",
+      identity: {
+        stableId: "jsdoc:function:cycleAlpha",
+        kind: "function",
+        longname: "cycleAlpha"
+      },
+      navigation: {
+        parentLongname: "cycleBeta",
+        group: "function"
+      }
+    }
+  }
+};
+
+const cycleBetaDoclet = {
+  kind: "function",
+  name: "cycleBeta",
+  longname: "cycleBeta",
+  description: "Cycle beta.",
+  hia: {
+    presentation: {
+      model: "hia-jsdoc-presentation",
+      modelVersion: "0.1.0",
+      identity: {
+        stableId: "jsdoc:function:cycleBeta",
+        kind: "function",
+        longname: "cycleBeta"
+      },
+      navigation: {
+        parentLongname: "cycleAlpha",
+        group: "function"
+      }
+    }
+  }
+};
+
+const fixtureDoclets = [
+  doclet,
+  moduleDoclet,
+  typedefDoclet,
+  fallbackMemberDoclet,
+  cycleAlphaDoclet,
+  cycleBetaDoclet
+];
 
 const summary = summarizeHiaMetadata(doclet);
 const html = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet]
+  doclets: fixtureDoclets
 });
 const zhHtml = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet],
+  doclets: fixtureDoclets,
   locale: "zh-CN"
 });
 const enHtml = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet],
+  doclets: fixtureDoclets,
   locale: "en"
 });
 const collapsedHtml = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet],
+  doclets: fixtureDoclets,
   theme: {
     collapse: {
       docletsDefaultExpanded: false,
@@ -337,7 +447,7 @@ const collapsedHtml = renderPage({
 });
 const selectHtml = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet],
+  doclets: fixtureDoclets,
   theme: {
     languageControls: {
       mode: "select"
@@ -346,7 +456,7 @@ const selectHtml = renderPage({
 });
 const selectZhHtml = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet],
+  doclets: fixtureDoclets,
   locale: "zh-CN",
   theme: {
     languageControls: {
@@ -356,14 +466,14 @@ const selectZhHtml = renderPage({
 });
 const skinHtml = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet],
+  doclets: fixtureDoclets,
   theme: {
     skin: "graphite"
   }
 });
 const codeOptionsHtml = renderPage({
   title: "Fixture",
-  doclets: [doclet, moduleDoclet, typedefDoclet],
+  doclets: fixtureDoclets,
   theme: {
     code: {
       fontFamily: "mono",
@@ -374,10 +484,12 @@ const codeOptionsHtml = renderPage({
     }
   }
 });
-const searchIndex = buildSearchIndex([doclet, moduleDoclet, typedefDoclet]);
-const pageI18n = collectPageI18n([doclet, moduleDoclet, typedefDoclet]);
+const searchIndex = buildSearchIndex(fixtureDoclets);
+const navigationGroups = buildNavigationGroups(fixtureDoclets);
+const pageI18n = collectPageI18n(fixtureDoclets);
 const pageI18nData = buildI18nPageData(pageI18n);
 const themeCss = fs.readFileSync(path.resolve(__dirname, "../static/hia-theme.css"), "utf8");
+const themeJs = fs.readFileSync(path.resolve(__dirname, "../static/hia-theme.js"), "utf8");
 const blockedFontPattern = new RegExp([
   "Con" + "solas",
   "Courier" + " New",
@@ -399,11 +511,28 @@ assert.deepEqual(summary.locales, ["zh-CN", "en"]);
 assert.equal(summary.defaultLocale, "zh-CN");
 assert.equal(summary.fallbackLocale, "en");
 assert.equal(summary.i18nMode, "runtimeSwitch");
+assert.equal(summary.presentationStableId, "jsdoc:function:module:theme.themeDemo");
+assert.equal(summary.presentationParentLongname, "module:theme");
 
-assert.equal(searchIndex.length, 3);
+assert.equal(searchIndex.length, 6);
 assert.equal(searchIndex.some((entry) => entry.kind === "typedef"), true);
 assert.equal(searchIndex.some((entry) => entry.sourceReferences === 2), true);
-assert.equal(searchIndex[1].localizedSummaries["zh-CN"], "主题演示函数。");
+assert.equal(
+  searchIndex.find((entry) => entry.name === "themeDemo").localizedSummaries["zh-CN"],
+  "主题演示函数。"
+);
+assert.equal(navigationGroups.length, 2);
+assert.equal(navigationGroups[0].kind, "module");
+assert.equal(navigationGroups[0].roots[0].doclet.longname, "module:theme");
+assert.equal(navigationGroups[0].nodeCount, 4);
+assert.deepEqual(
+  navigationGroups[0].roots[0].children.map((node) => node.doclet.name),
+  ["plainFallback", "themeDemo", "ThemeOptions"]
+);
+assert.deepEqual(
+  navigationGroups[1].roots.map((node) => node.doclet.name),
+  ["cycleAlpha", "cycleBeta"]
+);
 assert.equal(pageI18n.enabled, true);
 assert.equal(pageI18nData.perLocalePages.en, "index.en.html");
 assert.equal(pageI18nData.labels["zh-CN"]["search.label"], "搜索符号");
@@ -420,6 +549,13 @@ assert.match(html, /class="doclet-details" open/);
 assert.match(html, /class="section-summary collapse-summary"/);
 assert.match(html, /class="doc-section source-section doclet-source collapsible-section" open/);
 assert.match(html, /class="doc-section metadata-section collapsible-section" open/);
+assert.match(html, /<ul class="nav-tree-root">/);
+assert.match(html, /class="nav-tree-children" data-hia-nav-branch open/);
+assert.match(html, /data-hia-stable-id="jsdoc:function:module:theme.themeDemo"/);
+assert.match(html, /href="#function-module:theme\.themedemo"[^>]*>themeDemo<\/a>/);
+assert.match(html, /data-hia-label="nav.containedSymbols" data-hia-label-count="3"/);
+assert.match(html, /data-hia-provenance="defined-in" data-hia-source-mode="link embed"/);
+assert.match(html, /data-hia-provenance="source-reference" data-hia-source-mode="link embed"/);
 assert.match(html, /examples\/basic\/src\/demo\.js:12/);
 assert.match(html, /THEME_DEMO_BODY - examples\/basic\/src\/demo\.js:18-21/);
 assert.match(html, /href="https:\/\/example\.invalid\/repo\/examples\/basic\/src\/demo\.js#L18-L21"/);
@@ -450,17 +586,20 @@ assert.match(html, /显示名称。/);
 assert.match(html, /Display name./);
 assert.match(html, /hia-theme\.js/);
 assert.doesNotMatch(html, /K:\\/);
+assert.doesNotMatch(html, /role="tree"|role="treeitem"/);
 assert.match(html, /class="hia-skin hia-skin-classic"/);
 assert.match(html, /data-hia-skin="classic"/);
 assert.match(zhHtml, /<html lang="zh-CN">/);
 assert.match(zhHtml, /data-hia-i18n="single"/);
 assert.match(zhHtml, /href="index.en.html"/);
 assert.match(zhHtml, /href="index.html" data-hia-label="language.runtime">运行时/);
+assert.match(zhHtml, /href="#function-module:theme\.themedemo"[^>]*>themeDemo<\/a>/);
 assert.match(enHtml, /<html lang="en">/);
 assert.match(enHtml, /API Documentation/);
 assert.match(enHtml, /Parameters/);
 assert.match(enHtml, /Source References/);
 assert.match(enHtml, /Defined in/);
+assert.match(enHtml, /href="#function-module:theme\.themedemo"[^>]*>themeDemo<\/a>/);
 assert.match(enHtml, /data-hia-locale="en"[^>]*><p>Display name\.<\/p>/);
 assert.doesNotMatch(enHtml, /data-hia-locale="en"[^>]*><p>显示名称。<\/p>/);
 assert.match(collapsedHtml, /<details class="doclet-details">/);
@@ -479,5 +618,8 @@ assert.match(codeOptionsHtml, /--code-tab-size: 4/);
 assert.match(codeOptionsHtml, /"fontFamily":"mono"/);
 assert.match(themeCss, /\.code-block\s*\{[\s\S]*?min-width:\s*0;/);
 assert.match(themeCss, /\.doclet\s*\{[\s\S]*?overflow-x:\s*clip;/);
+assert.match(themeCss, /\.nav-tree-root,[\s\S]*?list-style:\s*none;/);
+assert.match(themeJs, /data-hia-nav-branch/);
+assert.doesNotMatch(themeJs, /\bfetch\s*\(/);
 
 console.log("G-JTH-P5 render fixtures passed.");

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 - 2026-07-30
+
+### Added
+
+- Hierarchical native disclosure navigation from optional JPHS presentation metadata with plain JSDoc `memberof` fallback.
+- Stable-anchor, locale-stability, cycle fallback, no-ARIA-tree and source mode fixture coverage.
+- Explicit public artifact markers for definition/reference provenance and producer-controlled source display modes.
+
 ## 0.1.1 - 2026-07-15
 
 ### Fixed

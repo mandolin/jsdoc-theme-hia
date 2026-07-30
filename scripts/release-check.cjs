@@ -31,17 +31,29 @@ function exists(relativePath) {
   return fs.existsSync(path.join(root, relativePath));
 }
 
+/**
+ * 验证 JSDoc example 和 dry-run pack 没有留下可提交的生成物。
+ * Verifies that the JSDoc example and dry-run pack leave no committable generated artifacts.
+ *
+ * @returns {void}
+ */
 function assertNoGeneratedOutput() {
   assert.equal(exists("examples/basic/out"), false, "examples/basic/out must not be committed");
-  assert.equal(exists("mandolin-jsdoc-theme-hia-0.1.1.tgz"), false, "dry-run tarball must not remain");
+  assert.equal(exists("mandolin-jsdoc-theme-hia-0.1.2.tgz"), false, "dry-run tarball must not remain");
 }
 
+/**
+ * 校验 public theme 的 release preflight metadata 与受控 example surface。
+ * Checks public-theme release-preflight metadata and the controlled example surface.
+ *
+ * @returns {void}
+ */
 function run() {
   const pkg = readJson("package.json");
   const exampleConfig = readJson("examples/basic/jsdoc.conf.json");
 
   assert.equal(pkg.name, "@mandolin/jsdoc-theme-hia");
-  assert.equal(pkg.version, "0.1.1");
+  assert.equal(pkg.version, "0.1.2");
   assert.equal(pkg.license, "MIT");
   assert.equal(pkg.private, false);
   assert.equal(pkg.main, "publish.js");

@@ -10,7 +10,7 @@ GitHub: <https://github.com/mandolin/jsdoc-theme-hia>
 
 - Renders common JSDoc doclet kinds: module, class, function, member, constant and typedef.
 - Displays function signatures, params, returns, properties and examples.
-- Provides sidebar navigation and local search data.
+- Provides hierarchical disclosure sidebar navigation and local search data.
 - Reads `doclet.hia.source.definedIn` and `doclet.hia.source.primaryBlock` for definition source links and previews.
 - Reads `doclet.hia.source.references` for explicit source references such as `@coderef`.
 - Reads `doclet.hia.i18n.fields` for field-level multilingual descriptions.
@@ -119,9 +119,25 @@ The theme writes the following files to the configured destination:
 - `i18n-index.json`
 - `hia-metadata.json`
 
+## Navigation and Deep Links
+
+The sidebar keeps the existing `kind-${slug(longname)}` fragment anchors as the
+`0.1.x` deep-link compatibility surface. When
+`@mandolin/jsdoc-plugin-hia-sys` provides
+`hia-jsdoc-presentation@0.1.0`, the theme uses its public containment hint;
+otherwise it falls back to the JSDoc `memberof` field. Missing, self-referential
+or cyclic parent hints are rendered as root entries so every doclet remains
+reachable.
+
+The hierarchy uses ordinary `<nav>`, list and native `<details>` disclosure
+elements. It deliberately does not emit an ARIA `tree`/`treeitem` model or
+custom tree keyboard behavior. Locale switching changes labels and localized
+content only; fragment anchors and navigation hrefs are the same in runtime and
+per-locale pages.
+
 ## Source Preview
 
-When used with `@mandolin/jsdoc-plugin-hia-sys`, definition source metadata is rendered in a `Source` section using relative paths. Explicit `@coderef` metadata is rendered separately in a `Source References` section. Both sections can display file links, line links, range hints and collapsible source previews.
+When used with `@mandolin/jsdoc-plugin-hia-sys`, definition source metadata is rendered in a `Source` section using relative paths. Explicit `@coderef` metadata is rendered separately in a `Source References` section. Both sections can display producer-approved file links, line links, range hints and collapsible embedded source previews. The theme does not fetch source content: `link` and controlled `embed` are the supported display modes, while `fetch` is not applicable.
 
 ## Multilingual Rendering
 
@@ -175,6 +191,7 @@ npm run test:all
 - Node.js 18 or newer.
 - JSDoc 4.x.
 - CommonJS theme entry.
+- `hia-jsdoc-presentation@0.1.0` is optional; plain JSDoc doclets remain supported.
 
 ## Stability
 
