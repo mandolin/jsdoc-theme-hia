@@ -15,6 +15,10 @@
 - Fragment identities now add a deterministic collision-resistant suffix.
 - Source bodies remain outside the presentation profile and search index.
 
+### Fixed
+
+- Generated fetch/link sites now mark `sources/*.txt` as byte-stable Git assets so Windows newline conversion cannot invalidate browser digest checks.
+
 ## 0.1.2 - 2026-07-30
 
 ### Added

@@ -130,6 +130,7 @@ The theme writes the following files to the configured destination:
 - `documentation-presentation-profile.json`
 - `hia-page-map.json`
 - `sources/{sha256}.txt` in `fetch` and `link` modes
+- `.gitattributes` in `fetch` and `link` modes, scoping `sources/*.txt` as byte-stable Git assets
 
 ## Navigation and Deep Links
 

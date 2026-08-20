@@ -42,6 +42,27 @@ function writeFile(filePath, content) {
   fs.writeFileSync(filePath, content, "utf8");
 }
 
+/**
+ * @lang zh-CN
+ * 为可提交到 Git/GitHub Pages 的源码资产写入局部字节稳定性规则，避免 Windows 换行转换破坏摘要。
+ *
+ * @lang en
+ * Writes a local byte-stability rule for source assets committed to Git/GitHub Pages, preventing Windows newline conversion from invalidating digests.
+ *
+ * @param {string} destination 生成站点根目录。 / Generated site root.
+ * @param {Array<{relativeUrl:string,content:string}>} sourceFiles 已获 producer 批准的源码资产。 / Producer-approved source assets.
+ * @returns {void}
+ */
+function writeSourceAssetGitAttributes(destination, sourceFiles) {
+  // <lang><zh-CN>embed/none 模式没有外置源码文件，因此不制造无意义的仓库策略文件。</zh-CN><en>Embed and none modes have no external source files, so they do not create an irrelevant repository policy file.</en></lang>
+  if (sourceFiles.length === 0) {
+    return;
+  }
+
+  // <lang><zh-CN>`-text` 要求 Git 原样保留摘要覆盖的 UTF-8 字节；该规则只约束生成站点的 sources 目录。</zh-CN><en>`-text` requires Git to preserve the exact UTF-8 bytes covered by the digest; the rule is scoped to the generated site's sources directory.</en></lang>
+  writeFile(path.join(destination, ".gitattributes"), "sources/*.txt -text\n");
+}
+
 function copyStatic(destination) {
   const css = fs.readFileSync(path.resolve(__dirname, "static/hia-theme.css"), "utf8");
   const js = fs.readFileSync(path.resolve(__dirname, "static/hia-theme.js"), "utf8");
@@ -104,6 +125,8 @@ function publish(data, opts) {
   for (const sourceFile of presentationModel.sourceAssets.files) {
     writeFile(path.join(destination, sourceFile.relativeUrl), sourceFile.content);
   }
+  // <lang><zh-CN>站点级 Git 属性与源码资产同时生成，确保部署检出后仍可通过浏览器完整性校验。</zh-CN><en>Site-level Git attributes are generated with source assets so browser integrity verification survives deployment checkout.</en></lang>
+  writeSourceAssetGitAttributes(destination, presentationModel.sourceAssets.files);
 
   // <lang><zh-CN>multi-page index 是无正文入口；single-page page group 继续承载全部 doclet。</zh-CN><en>The multi-page index is a body-free entry; the single-page group continues to carry all doclets.</en></lang>
   const outputPages = presentationModel.partition.selection.pageMode === "multi-page"

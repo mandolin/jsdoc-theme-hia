@@ -707,6 +707,7 @@ assert.equal(publishedPageMap.mode, "multi-page");
 assert.equal(publishedPageMap.pages.length > 1, true);
 assert.equal(publishedPageMap.pages.every(({ file }) => /^[a-z0-9._-]+\.html$/.test(file) && !file.includes(":")), true);
 assert.equal(publishedPageMap.pages.every(({ file }) => fs.existsSync(path.join(publishOutput, file))), true);
+assert.equal(fs.readFileSync(path.join(publishOutput, ".gitattributes"), "utf8"), "sources/*.txt -text\n");
 assert.equal(publishedProfile.source.assets.every(({ relativeUrl }) => fs.existsSync(path.join(publishOutput, relativeUrl))), true);
 assert.equal(publishedIndex.includes("<article class=\"doclet\""), false);
 assert.equal(publishedIndex.includes("data-hia-page-mode=\"multi-page\""), true);
