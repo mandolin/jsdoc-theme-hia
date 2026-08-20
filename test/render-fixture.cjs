@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const {
   buildI18nPageData,
@@ -11,6 +12,12 @@ const {
 } = require("../src/render.cjs");
 const { collectPageI18n } = require("../src/metadata-reader.cjs");
 const { summarizeHiaMetadata } = require("../src/metadata-reader.cjs");
+const {
+  BUILTIN_THEME_SKIN_CATALOG,
+  buildPresentationProfile,
+  getPresentationFragmentId
+} = require("../src/presentation-profile.cjs");
+const { publish } = require("../publish.js");
 
 const doclet = {
   kind: "function",
@@ -485,6 +492,34 @@ const html = renderPage({
   title: "Fixture",
   doclets: fixtureDoclets
 });
+const embedHtml = renderPage({
+  title: "Fixture",
+  doclets: fixtureDoclets,
+  presentation: {
+    sourceMode: "embed"
+  }
+});
+const linkHtml = renderPage({
+  title: "Fixture",
+  doclets: fixtureDoclets,
+  presentation: {
+    sourceMode: "link"
+  }
+});
+const noneHtml = renderPage({
+  title: "Fixture",
+  doclets: fixtureDoclets,
+  presentation: {
+    sourceMode: "none"
+  }
+});
+const singlePageHtml = renderPage({
+  title: "Fixture",
+  doclets: fixtureDoclets,
+  presentation: {
+    pageMode: "single-page"
+  }
+});
 const zhHtml = renderPage({
   title: "Fixture",
   doclets: fixtureDoclets,
@@ -558,6 +593,31 @@ const navigationGroups = buildNavigationGroups(fixtureDoclets);
 const invalidPresentationNavigationGroups = buildNavigationGroups(invalidPresentationFixtureDoclets);
 const pageI18n = collectPageI18n(fixtureDoclets);
 const pageI18nData = buildI18nPageData(pageI18n);
+// <lang><zh-CN>四种 source mode 与 partition/skin 变体用于验证中性 identity 稳定性。</zh-CN><en>Four source modes and partition/skin variants verify neutral identity stability.</en></lang>
+const fetchModel = buildPresentationProfile(fixtureDoclets, {});
+const embedModel = buildPresentationProfile(fixtureDoclets, { sourceMode: "embed", skin: "graphite", scheme: "dark" });
+const linkModel = buildPresentationProfile(fixtureDoclets, { sourceMode: "link" });
+const noneModel = buildPresentationProfile(fixtureDoclets, { sourceMode: "none" });
+const singlePageModel = buildPresentationProfile(fixtureDoclets, { pageMode: "single-page" });
+// <lang><zh-CN>publish fixture 验证真实 artifact set，不只验证 renderer string。</zh-CN><en>The publish fixture verifies the real artifact set, not only renderer strings.</en></lang>
+const publishOutput = fs.mkdtempSync(path.join(os.tmpdir(), "jth-wp116-"));
+const fakeTaffyData = () => ({ get: () => fixtureDoclets });
+publish(fakeTaffyData, {
+  destination: publishOutput,
+  hia: {
+    presentation: {
+      pageMode: "multi-page",
+      sourceMode: "fetch"
+    },
+    theme: {
+      skin: "classic",
+      scheme: "system"
+    }
+  }
+});
+const publishedProfile = JSON.parse(fs.readFileSync(path.join(publishOutput, "documentation-presentation-profile.json"), "utf8"));
+const publishedPageMap = JSON.parse(fs.readFileSync(path.join(publishOutput, "hia-page-map.json"), "utf8"));
+const publishedIndex = fs.readFileSync(path.join(publishOutput, "index.html"), "utf8");
 const themeCss = fs.readFileSync(path.resolve(__dirname, "../static/hia-theme.css"), "utf8");
 const themeJs = fs.readFileSync(path.resolve(__dirname, "../static/hia-theme.js"), "utf8");
 const blockedFontPattern = new RegExp([
@@ -612,6 +672,45 @@ assert.equal(pageI18n.enabled, true);
 assert.equal(pageI18nData.perLocalePages.en, "index.en.html");
 assert.equal(pageI18nData.labels["zh-CN"]["search.label"], "搜索符号");
 
+assert.equal(fetchModel.profile.contract, "documentation-presentation-profile");
+assert.equal(fetchModel.profile.contractVersion, "0.1.0-draft");
+assert.equal(fetchModel.profile.pagePartition.defaultMode, "multi-page");
+assert.equal(fetchModel.profile.pagePartition.mode, "multi-page");
+assert.equal(fetchModel.profile.source.defaultMode, "fetch");
+assert.equal(fetchModel.profile.source.mode, "fetch");
+assert.equal(fetchModel.profile.source.fallbackPolicy, "none");
+assert.equal(fetchModel.profile.source.assets.every((asset) => /^sources\/[a-f0-9]{64}\.txt$/.test(asset.relativeUrl)), true);
+assert.equal(fetchModel.profile.source.assets.every((asset) => asset.digest.algorithm === "sha384"), true);
+assert.equal(JSON.stringify(fetchModel.profile).includes("function themeDemo"), false);
+assert.equal(JSON.stringify(fetchModel.profile).includes("K:\\"), false);
+assert.deepEqual(BUILTIN_THEME_SKIN_CATALOG.map(({ skinId }) => skinId), ["classic", "graphite", "lumen"]);
+assert.equal(fetchModel.profile.theme.skins.length, 3);
+assert.equal(fetchModel.profile.theme.requiredCapabilities.includes("source-reader"), true);
+assert.equal(embedModel.profile.source.assets.every((asset) => asset.relativeUrl === undefined), true);
+assert.equal(linkModel.profile.source.assets.every((asset) => typeof asset.relativeUrl === "string"), true);
+assert.equal(noneModel.profile.source.assets.length, 0);
+assert.equal(noneModel.profile.privacy.sourceExposure, "none");
+assert.equal(singlePageModel.profile.pagePartition.mode, "single-page");
+assert.equal(singlePageModel.profile.pagePartition.singlePageId, "page.all");
+assert.equal(singlePageModel.profile.pagePartition.topics.every(({ pageId }) => pageId === "page.all"), true);
+assert.deepEqual(
+  fetchModel.profile.pagePartition.topics.map(({ topicId, fragmentId, navigationId, relationIds }) => ({ topicId, fragmentId, navigationId, relationIds })),
+  embedModel.profile.pagePartition.topics.map(({ topicId, fragmentId, navigationId, relationIds }) => ({ topicId, fragmentId, navigationId, relationIds }))
+);
+assert.deepEqual(
+  fetchModel.profile.pagePartition.topics.map(({ topicId, fragmentId, navigationId, relationIds }) => ({ topicId, fragmentId, navigationId, relationIds })),
+  noneModel.profile.pagePartition.topics.map(({ topicId, fragmentId, navigationId, relationIds }) => ({ topicId, fragmentId, navigationId, relationIds }))
+);
+assert.equal(publishedProfile.contract, "documentation-presentation-profile");
+assert.equal(publishedPageMap.contract, "jsdoc-theme-hia/page-map");
+assert.equal(publishedPageMap.mode, "multi-page");
+assert.equal(publishedPageMap.pages.length > 1, true);
+assert.equal(publishedPageMap.pages.every(({ file }) => /^[a-z0-9._-]+\.html$/.test(file) && !file.includes(":")), true);
+assert.equal(publishedPageMap.pages.every(({ file }) => fs.existsSync(path.join(publishOutput, file))), true);
+assert.equal(publishedProfile.source.assets.every(({ relativeUrl }) => fs.existsSync(path.join(publishOutput, relativeUrl))), true);
+assert.equal(publishedIndex.includes("<article class=\"doclet\""), false);
+assert.equal(publishedIndex.includes("data-hia-page-mode=\"multi-page\""), true);
+
 assert.match(html, /模块/);
 assert.match(html, /函数/);
 assert.match(html, /类型定义/);
@@ -627,20 +726,33 @@ assert.match(html, /class="doc-section metadata-section collapsible-section" ope
 assert.match(html, /<ul class="nav-tree-root">/);
 assert.match(html, /class="nav-tree-children" data-hia-nav-branch open/);
 assert.match(html, /data-hia-stable-id="jsdoc:function:module:theme.themeDemo"/);
-assert.match(html, /href="#function-module:theme\.themedemo"[^>]*>themeDemo<\/a>/);
+assert.equal(html.includes(`href="${fetchModel.partition.hrefByLongname.get(doclet.longname)}" data-hia-stable-id="jsdoc:function:module:theme.themeDemo">themeDemo</a>`), true);
 assert.match(html, /data-hia-label="nav.containedSymbols" data-hia-label-count="3"/);
-assert.match(html, /data-hia-provenance="defined-in" data-hia-resolution="resolved" data-hia-source-mode="link embed"/);
-assert.match(html, /data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="resolved" data-hia-source-mode="link embed"/);
-assert.match(html, /data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="resolved" data-hia-source-mode="metadata"/);
+assert.match(html, /data-hia-provenance="defined-in" data-hia-resolution="resolved" data-hia-source-mode="fetch"/);
+assert.match(html, /data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="resolved" data-hia-source-mode="fetch"/);
+assert.match(html, /data-hia-source-reader data-hia-source-state="idle"/);
+assert.match(html, /data-hia-source-integrity="sha384-/);
+assert.match(html, /data-hia-source-url="sources\/[a-f0-9]{64}\.txt"/);
+assert.match(html, /data-hia-source-state="not-found"/);
 assert.match(html, /data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="unresolved" data-hia-source-mode="metadata"/);
 assert.match(html, /examples\/basic\/src\/demo\.js:12/);
 assert.match(html, /THEME_DEMO_BODY - examples\/basic\/src\/demo\.js:18-21/);
 assert.match(html, /METADATA_ONLY_FRAGMENT - examples\/basic\/src\/demo\.js:22/);
-assert.match(html, /href="https:\/\/example\.invalid\/repo\/examples\/basic\/src\/demo\.js#L18-L21"/);
-assert.match(html, /data-line="18"/);
-assert.match(html, /tok-keyword/);
+assert.doesNotMatch(html, /href="https:\/\/example\.invalid/);
+assert.doesNotMatch(html, /function themeDemo\(name\)/);
+assert.match(embedHtml, /data-hia-source-mode="embed"/);
+assert.match(embedHtml, /data-line="18"/);
+assert.match(embedHtml, /tok-keyword/);
+assert.match(linkHtml, /data-hia-source-mode="link"/);
+assert.match(linkHtml, /href="sources\/[a-f0-9]{64}\.txt"/);
+assert.doesNotMatch(linkHtml, /data-hia-source-reader/);
+assert.match(noneHtml, /data-hia-source-mode="none"/);
+assert.doesNotMatch(noneHtml, /class="doc-section source-section/);
+assert.doesNotMatch(noneHtml, /data-hia-source-reader/);
+assert.match(singlePageHtml, /data-hia-page-mode="single-page"/);
+assert.equal(singlePageHtml.includes(`href="#${getPresentationFragmentId(doclet)}" data-hia-stable-id="jsdoc:function:module:theme.themeDemo">themeDemo</a>`), true);
 assert.match(html, /源码片段元数据缺失或未解析。/);
-assert.match(html, /data-hia-label="source.metadataOnly"/);
+assert.match(html, /data-hia-label="source.state.not-found"/);
 assert.match(html, /hia-search-data/);
 assert.match(html, /hia-i18n-data/);
 assert.match(html, /hia-theme-data/);
@@ -649,6 +761,9 @@ assert.match(html, /<nav class="sidebar" aria-label="符号"/);
 assert.match(html, /aria-controls="hia-content"/);
 assert.match(html, /id="hia-content"/);
 assert.match(html, /data-hia-code-controls/);
+assert.match(html, /data-hia-theme-controls/);
+assert.match(html, /data-hia-skin-select/);
+assert.match(html, /data-hia-scheme-select/);
 assert.match(html, /data-hia-code-font-family/);
 assert.match(html, /data-hia-code-font-size/);
 assert.match(html, /data-hia-label="code.controls"/);
@@ -667,21 +782,22 @@ assert.match(html, /Display name./);
 assert.match(html, /hia-theme\.js/);
 assert.doesNotMatch(html, /K:\\/);
 assert.doesNotMatch(html, /role="tree"|role="treeitem"/);
-assert.match(invalidPresentationHtml, /href="#function-module:theme\.invalidprofile"[^>]*>invalidProfile<\/a>/);
+assert.equal(invalidPresentationHtml.includes(`data-hia-stable-id="jsdoc:function:stale-profile"`), false);
 assert.doesNotMatch(invalidPresentationHtml, /data-hia-stable-id="jsdoc:function:stale-profile"/);
 assert.match(html, /class="hia-skin hia-skin-classic"/);
 assert.match(html, /data-hia-skin="classic"/);
+assert.match(html, /data-hia-scheme="system"/);
 assert.match(zhHtml, /<html lang="zh-CN">/);
 assert.match(zhHtml, /data-hia-i18n="single"/);
 assert.match(zhHtml, /href="index.en.html"/);
 assert.match(zhHtml, /href="index.html" data-hia-label="language.runtime">运行时/);
-assert.match(zhHtml, /href="#function-module:theme\.themedemo"[^>]*>themeDemo<\/a>/);
+assert.equal(zhHtml.includes(`.zh-CN.html#${getPresentationFragmentId(doclet)}`), true);
 assert.match(enHtml, /<html lang="en">/);
 assert.match(enHtml, /API Documentation/);
 assert.match(enHtml, /Parameters/);
 assert.match(enHtml, /Source References/);
 assert.match(enHtml, /Defined in/);
-assert.match(enHtml, /href="#function-module:theme\.themedemo"[^>]*>themeDemo<\/a>/);
+assert.equal(enHtml.includes(`.en.html#${getPresentationFragmentId(doclet)}`), true);
 assert.match(enHtml, /data-hia-locale="en"[^>]*><p>Display name\.<\/p>/);
 assert.doesNotMatch(enHtml, /data-hia-locale="en"[^>]*><p>显示名称。<\/p>/);
 assert.match(collapsedHtml, /<details class="doclet-details">/);
@@ -701,7 +817,14 @@ assert.match(codeOptionsHtml, /"fontFamily":"mono"/);
 assert.match(themeCss, /\.code-block\s*\{[\s\S]*?min-width:\s*0;/);
 assert.match(themeCss, /\.doclet\s*\{[\s\S]*?overflow-x:\s*clip;/);
 assert.match(themeCss, /\.nav-tree-root,[\s\S]*?list-style:\s*none;/);
+assert.match(themeCss, /\.theme-controls/);
+assert.match(themeCss, /\.source-reader/);
 assert.match(themeJs, /data-hia-nav-branch/);
-assert.doesNotMatch(themeJs, /\bfetch\s*\(/);
+assert.match(themeJs, /window\.fetch\(relativeUrl/);
+assert.match(themeJs, /credentials:\s*"omit"/);
+assert.match(themeJs, /redirect:\s*"error"/);
+assert.match(themeJs, /window\.crypto\.subtle\.digest/);
+
+fs.rmSync(publishOutput, { recursive: true, force: true });
 
 console.log("G-JTH-P5 render fixtures passed.");

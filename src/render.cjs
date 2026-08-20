@@ -8,6 +8,14 @@ const {
   getLocalizedEntry,
   summarizeHiaMetadata
 } = require("./metadata-reader.cjs");
+const {
+  BUILTIN_THEME_SKIN_CATALOG,
+  buildPresentationProfile,
+  getPresentationFragmentId,
+  getPrimarySourceKey,
+  getReferenceSourceKey,
+  normalizePresentationOptions
+} = require("./presentation-profile.cjs");
 
 const KIND_LABELS = new Map([
   ["module", "Modules"],
@@ -58,7 +66,8 @@ const JAVASCRIPT_KEYWORDS = new Set([
   "yield"
 ]);
 
-const BUILTIN_THEME_SKINS = new Set(["classic", "lumen", "graphite"]);
+/** @lang zh-CN skin allowlist 直接来自 JTH owner catalog。 @lang en The skin allowlist comes directly from the JTH-owned catalog. */
+const BUILTIN_THEME_SKINS = new Set(BUILTIN_THEME_SKIN_CATALOG.map(({ skinId }) => skinId));
 const CODE_FONT_FAMILIES = {
   sarasa: "\"Sarasa Mono SC\", \"Sarasa Fixed SC\", \"Noto Sans Mono CJK SC\", \"Source Han Mono SC\", \"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", monospace",
   cascadia: "\"Cascadia Code\", \"Sarasa Mono SC\", \"Sarasa Fixed SC\", \"Noto Sans Mono CJK SC\", \"Source Han Mono SC\", \"JetBrains Mono\", \"Fira Code\", monospace",
@@ -92,6 +101,9 @@ const UI_LABELS = {
     "code.tabSize": "Tab",
     "code.wrap": "Wrap",
     "code.reset": "Reset",
+    "theme.controls": "Theme",
+    "theme.skin": "Skin",
+    "theme.scheme": "Color scheme",
     "section.parameters": "Parameters",
     "section.properties": "Properties",
     "section.returns": "Returns",
@@ -108,6 +120,18 @@ const UI_LABELS = {
     "source.metadataOnly": "No public source link or preview is available for this metadata.",
     "source.definedIn": "Defined in",
     "source.reference": "Reference {index}",
+    "source.load": "Load source",
+    "source.open": "Open source",
+    "source.reset": "Reset source reader",
+    "source.state.idle": "Source is ready to load.",
+    "source.state.loading": "Loading source…",
+    "source.state.ready": "Source loaded.",
+    "source.state.empty": "The source asset is empty.",
+    "source.state.denied": "Source access was denied.",
+    "source.state.not-found": "The source asset was not found.",
+    "source.state.integrity-error": "Source integrity verification failed.",
+    "source.state.network-error": "The source request failed.",
+    "source.state.aborted": "The source request was aborted.",
     "table.name": "Name",
     "table.type": "Type",
     "table.default": "Default",
@@ -166,6 +190,9 @@ const UI_LABELS = {
     "code.tabSize": "缩进",
     "code.wrap": "换行",
     "code.reset": "重置",
+    "theme.controls": "主题",
+    "theme.skin": "皮肤",
+    "theme.scheme": "配色方案",
     "section.parameters": "参数",
     "section.properties": "属性",
     "section.returns": "返回值",
@@ -182,6 +209,18 @@ const UI_LABELS = {
     "source.metadataOnly": "该元数据没有可公开呈现的源码链接或预览。",
     "source.definedIn": "定义于",
     "source.reference": "引用 {index}",
+    "source.load": "加载源码",
+    "source.open": "打开源码",
+    "source.reset": "重置源码读取器",
+    "source.state.idle": "源码已可加载。",
+    "source.state.loading": "正在加载源码……",
+    "source.state.ready": "源码已加载。",
+    "source.state.empty": "源码资源为空。",
+    "source.state.denied": "源码访问被拒绝。",
+    "source.state.not-found": "未找到源码资源。",
+    "source.state.integrity-error": "源码完整性校验失败。",
+    "source.state.network-error": "源码请求失败。",
+    "source.state.aborted": "源码请求已中止。",
     "table.name": "名称",
     "table.type": "类型",
     "table.default": "默认值",
@@ -325,6 +364,7 @@ function normalizeThemeOptions(options = {}) {
     skin: {
       name: normalizeSkinName(skinOption)
     },
+    scheme: normalizePresentationOptions({ scheme: options.scheme }).scheme,
     collapse: {
       docletsDefaultExpanded: collapse.docletsDefaultExpanded !== false,
       sectionsDefaultExpanded: collapse.sectionsDefaultExpanded !== false,
@@ -340,6 +380,42 @@ function normalizeThemeOptions(options = {}) {
     },
     code: normalizeCodeOptions(code)
   };
+}
+
+/**
+ * @lang zh-CN
+ * 呈现 JTH owner 的可见 skin/scheme 选择器；选择只影响外观，不改变任何文档 identity。
+ *
+ * @lang en
+ * Renders the visible JTH-owned skin/scheme selector; selections affect appearance and no documentation identity.
+ *
+ * @param {object} renderOptions 已规范化 renderer options。 / Normalized renderer options.
+ * @param {object} labels 当前 UI labels。 / Current UI labels.
+ * @returns {string} 主题控制表单。 / Theme control form.
+ */
+function renderThemeControls(renderOptions, labels) {
+  // <lang><zh-CN>skin options 直接枚举 owner catalog，避免第二套目录。</zh-CN><en>Skin options enumerate the owner catalog directly, avoiding a second catalog.</en></lang>
+  const skinOptions = BUILTIN_THEME_SKIN_CATALOG.map(({ skinId }) => {
+    const selected = skinId === renderOptions.theme.skin.name ? " selected" : "";
+    return `<option value="${escapeHtml(skinId)}"${selected}>${escapeHtml(skinId)}</option>`;
+  }).join("");
+  // <lang><zh-CN>scheme 与 skin 分开选择并保持闭集。</zh-CN><en>Scheme is selected separately from skin and remains a closed set.</en></lang>
+  const schemeOptions = ["system", "light", "dark"].map((scheme) => {
+    const selected = scheme === renderOptions.theme.scheme ? " selected" : "";
+    return `<option value="${scheme}"${selected}>${scheme}</option>`;
+  }).join("");
+
+  return `<form class="theme-controls" data-hia-theme-controls aria-label="${escapeHtml(formatUiLabel(labels, "theme.controls"))}" ${renderAriaLabelAttributes("theme.controls")}>
+        <div class="theme-controls-title" ${renderLabelAttributes("theme.controls")}>${escapeHtml(formatUiLabel(labels, "theme.controls"))}</div>
+        <label class="theme-control">
+          <span ${renderLabelAttributes("theme.skin")}>${escapeHtml(formatUiLabel(labels, "theme.skin"))}</span>
+          <select class="theme-select" data-hia-skin-select>${skinOptions}</select>
+        </label>
+        <label class="theme-control">
+          <span ${renderLabelAttributes("theme.scheme")}>${escapeHtml(formatUiLabel(labels, "theme.scheme"))}</span>
+          <select class="theme-select" data-hia-scheme-select>${schemeOptions}</select>
+        </label>
+      </form>`;
 }
 
 function renderCodeStyle(codeOptions) {
@@ -455,7 +531,7 @@ function getDocletTitle(doclet) {
 }
 
 function getDocletId(doclet) {
-  return `${toSlug(doclet.kind || "unknown")}-${toSlug(getDocletTitle(doclet))}`;
+  return getPresentationFragmentId(doclet);
 }
 
 function getKindLabel(kind) {
@@ -1123,8 +1199,10 @@ function formatSourceLocation(fragment) {
 function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
   // <lang><zh-CN>读取 producer 已附带的 source metadata；renderer 不会由 doclet 名称或路径猜测并读取源码。</zh-CN><en>Read producer-carried source metadata; the renderer never guesses and reads source from a doclet name or path.</en></lang>
   const source = getDocletSource(doclet);
+  // <lang><zh-CN>none 是显式隐私态，源码区段与 locator 一起隐藏。</zh-CN><en>None is the explicit privacy state and hides the source section together with its locator.</en></lang>
+  const selectedMode = renderOptions.presentation && renderOptions.presentation.sourceMode || "fetch";
 
-  if (!source || (!source.definedIn && !source.primaryBlock)) {
+  if (selectedMode === "none" || !source || (!source.definedIn && !source.primaryBlock)) {
     return "";
   }
 
@@ -1134,25 +1212,17 @@ function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
   const primaryBlock = source.primaryBlock;
   // <lang><zh-CN>位置文本只来自 public-safe relative metadata，用于人读 provenance caption。</zh-CN><en>Location text comes only from public-safe relative metadata for the human-readable provenance caption.</en></lang>
   const definedInText = formatSourceLocation(definedIn);
-  // <lang><zh-CN>link 是 producer 提供的可选 URL metadata；enabled 但无 URL 时不会被补全。</zh-CN><en>Link is optional URL metadata supplied by the producer; an enabled link without a URL is never completed.</en></lang>
-  const link = (definedIn && definedIn.link) || {};
   // <lang><zh-CN>preview 仅指向已有 primary block preview metadata，绝不从 source/reference 反查正文。</zh-CN><en>Preview points only to existing primary-block preview metadata and never looks up a body from source/reference data.</en></lang>
   const preview = primaryBlock && primaryBlock.preview ? primaryBlock.preview : null;
-  // <lang><zh-CN>canPreview 是 embed 的严格许可条件：producer 未禁用且正文已在 metadata 中。</zh-CN><en>canPreview is the strict embed permission: the producer has not disabled it and content is already in metadata.</en></lang>
-  const canPreview = primaryBlock && preview && preview.enabled !== false && typeof preview.content === "string";
-  // <lang><zh-CN>sourceMode 只描述被动可呈现能力；metadata 表示不能公开 link 或 embed，绝不意味着 fetch。</zh-CN><en>sourceMode describes passive presentable capability only; metadata means no public link/embed and never implies fetch.</en></lang>
-  const sourceMode = getSourceDisplayModes(link, canPreview ? preview : null);
-  // <lang><zh-CN>metadata-only fallback 让用户看见受限状态，同时不泄漏 locator、路径以外信息或正文。</zh-CN><en>The metadata-only fallback exposes the restricted state without leaking locators, data beyond a safe path, or bodies.</en></lang>
-  const availabilityFallback = renderSourceAvailabilityFallback(sourceMode, labels);
-  // <lang><zh-CN>body 只组合 producer metadata 的公开投影；没有网络、filesystem 或 sidecar I/O。</zh-CN><en>Body combines only public projections of producer metadata; it performs no network, filesystem, or sidecar I/O.</en></lang>
+  // <lang><zh-CN>asset join 使用稳定 slot key；缺失 asset 必须显式 not-found，不能回退到其他模式。</zh-CN><en>The asset join uses a stable slot key; a missing asset must report not-found and cannot fall back to another mode.</en></lang>
+  const sourceEntry = renderOptions.sourceEntriesByKey instanceof Map
+    ? renderOptions.sourceEntriesByKey.get(getPrimarySourceKey(doclet))
+    : null;
+  // <lang><zh-CN>body 只组合所选单一模式；没有隐式 link+embed 组合。</zh-CN><en>Body composes only the one selected mode and has no implicit link-plus-embed combination.</en></lang>
   const body = [
-    `  <div class="source-reference primary-source" data-hia-provenance="defined-in" data-hia-resolution="resolved" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
+    `  <div class="source-reference primary-source" data-hia-provenance="defined-in" data-hia-resolution="resolved" data-hia-source-mode="${escapeHtml(selectedMode)}">`,
     `    <div class="source-caption"><span ${renderLabelAttributes("source.definedIn")}>${escapeHtml(formatUiLabel(labels, "source.definedIn"))}</span>${definedInText ? ` - ${escapeHtml(definedInText)}` : ""}</div>`,
-    definedIn ? renderSourceLinks(definedIn, link, labels) : "",
-    canPreview
-      ? renderSourcePreview(primaryBlock, preview, labels)
-      : "",
-    availabilityFallback,
+    renderSelectedSourceMode(primaryBlock, preview, sourceEntry, labels, renderOptions),
     "  </div>"
   ].filter(Boolean).join("\n");
 
@@ -1162,13 +1232,17 @@ function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
 }
 
 function renderSourceReferences(doclet, labels = UI_LABELS.en, renderOptions = {}) {
+  // <lang><zh-CN>none 隐藏全部 reference source surface，不保留可点击 locator。</zh-CN><en>None hides the entire reference-source surface and retains no clickable locator.</en></lang>
+  if (renderOptions.presentation && renderOptions.presentation.sourceMode === "none") {
+    return "";
+  }
   const references = getSourceReferences(doclet);
 
   if (!references.length) {
     return "";
   }
 
-  const body = references.map((reference, index) => renderSourceReference(reference, index, labels)).join("\n");
+  const body = references.map((reference, index) => renderSourceReference(reference, index, labels, renderOptions, doclet)).join("\n");
 
   return renderCollapsibleSection("section.sourceReferences", body, labels, renderOptions, {
     className: "doc-section source-section source-references"
@@ -1185,7 +1259,7 @@ function renderSourceReferences(doclet, labels = UI_LABELS.en, renderOptions = {
  * @param {object} labels 当前 UI labels / Current UI labels.
  * @returns {string} source-reference HTML / source-reference HTML.
  */
-function renderSourceReference(reference, index, labels = UI_LABELS.en) {
+function renderSourceReference(reference, index, labels = UI_LABELS.en, renderOptions = {}, doclet = {}) {
   // <lang><zh-CN>只接受 object-shaped producer record；其他输入安全退化为 unresolved，不执行 coercion 或读取。</zh-CN><en>Accept only an object-shaped producer record; all other input safely degrades to unresolved without coercion or reads.</en></lang>
   const safeReference = reference && typeof reference === "object" ? reference : {};
   // <lang><zh-CN>fragment 只在 object-shaped 时参与公开渲染，避免 malformed metadata 触发属性访问异常。</zh-CN><en>A fragment participates in public rendering only when object-shaped, preventing malformed metadata from causing property-access failures.</en></lang>
@@ -1226,24 +1300,78 @@ function renderSourceReference(reference, index, labels = UI_LABELS.en) {
 
   // <lang><zh-CN>preview 是 resolved fragment 的已有 metadata；它不允许 consumer 主动补取 source body。</zh-CN><en>Preview is existing metadata on a resolved fragment; it does not permit the consumer to retrieve a source body.</en></lang>
   const preview = fragment.preview || {};
-  // <lang><zh-CN>link 是 resolved fragment 的 producer-approved public link metadata。</zh-CN><en>Link is producer-approved public link metadata for the resolved fragment.</en></lang>
-  const link = fragment.link || {};
-  // <lang><zh-CN>canPreview 是受控 embed 的许可条件，与 resolution/provenance 分开计算。</zh-CN><en>canPreview is the permission condition for controlled embed, calculated separately from resolution/provenance.</en></lang>
-  const canPreview = preview.enabled !== false && typeof preview.content === "string";
-  // <lang><zh-CN>sourceMode 仅枚举现有 link/embed 或 metadata，不包含 fetch。</zh-CN><en>sourceMode enumerates only existing link/embed or metadata and never includes fetch.</en></lang>
-  const sourceMode = getSourceDisplayModes(link, canPreview ? preview : null);
-  // <lang><zh-CN>availabilityFallback 只在 metadata-only 时解释不可用性；link-only 继续可用而无需伪造 preview。</zh-CN><en>availabilityFallback explains only metadata-only unavailability; link-only remains usable without fabricating a preview.</en></lang>
-  const availabilityFallback = renderSourceAvailabilityFallback(sourceMode, labels);
+  // <lang><zh-CN>所选模式来自整站 profile，reference 不允许自行降级。</zh-CN><en>The selected mode comes from the site-wide profile and a reference cannot downgrade independently.</en></lang>
+  const sourceMode = renderOptions.presentation && renderOptions.presentation.sourceMode || "fetch";
+  // <lang><zh-CN>reference asset 使用 doclet + array index 稳定 join，正文不进入 HTML 以外的 neutral artifact。</zh-CN><en>The reference asset uses a stable doclet-plus-array-index join; the body enters no neutral artifact outside HTML.</en></lang>
+  const sourceEntry = renderOptions.sourceEntriesByKey instanceof Map
+    ? renderOptions.sourceEntriesByKey.get(getReferenceSourceKey(doclet, index))
+    : null;
 
   return [
     `<div class="source-reference" data-hia-provenance="source-reference" data-hia-relation-kind="source-reference" data-hia-resolution="resolved" data-hia-source-mode="${escapeHtml(sourceMode)}">`,
     `  <div class="source-caption">${escapeHtml(caption)}</div>`,
-    renderSourceLinks(fragment, link, labels),
-    canPreview
-      ? renderSourcePreview(fragment, preview, labels)
-      : availabilityFallback || `  <p class="source-fallback" ${renderLabelAttributes("source.previewDisabled")}>${escapeHtml(formatUiLabel(labels, "source.previewDisabled"))}</p>`,
+    renderSelectedSourceMode(fragment, preview, sourceEntry, labels, renderOptions),
     "</div>"
   ].filter(Boolean).join("\n");
+}
+
+/**
+ * @lang zh-CN
+ * 呈现整站明确选择的一个 source mode；缺失能力显式 not-found，绝不尝试其他模式。
+ *
+ * @lang en
+ * Renders the one explicitly selected site-wide source mode; missing capability reports not-found and never tries another
+ * mode.
+ *
+ * @param {object} fragment source fragment metadata。 / Source fragment metadata.
+ * @param {object|null} preview producer-approved preview。 / Producer-approved preview.
+ * @param {object|null} sourceEntry internal source asset join。 / Internal source-asset join.
+ * @param {object} labels 当前 UI labels。 / Current UI labels.
+ * @param {object} renderOptions renderer options。 / Renderer options.
+ * @returns {string} 单一源码阅读 surface。 / Single source-reading surface.
+ */
+function renderSelectedSourceMode(fragment, preview, sourceEntry, labels, renderOptions) {
+  // <lang><zh-CN>mode 已由 profile builder 规范化；此处不根据可用能力改变选择。</zh-CN><en>Mode has been normalized by the profile builder and is never changed here based on capability availability.</en></lang>
+  const mode = renderOptions.presentation && renderOptions.presentation.sourceMode || "fetch";
+
+  if (mode === "embed" && preview && preview.enabled !== false && typeof preview.content === "string") {
+    return renderSourcePreview(fragment, preview, labels);
+  }
+  if (mode === "link" && sourceEntry && sourceEntry.relativeUrl) {
+    return `  <div class="source-links"><a href="${escapeHtml(sourceEntry.relativeUrl)}" ${renderLabelAttributes("source.open")}>${escapeHtml(formatUiLabel(labels, "source.open"))}</a></div>`;
+  }
+  if (mode === "fetch" && sourceEntry && sourceEntry.relativeUrl) {
+    return renderSourceReader(sourceEntry, labels);
+  }
+  if (mode === "none") {
+    return "";
+  }
+
+  return `  <p class="source-fallback" data-hia-source-state="not-found" ${renderLabelAttributes("source.state.not-found")}>${escapeHtml(formatUiLabel(labels, "source.state.not-found"))}</p>`;
+}
+
+/**
+ * @lang zh-CN
+ * 呈现 data-only fetch reader；请求与状态转换由静态 runtime 执行，HTML 不包含源码正文。
+ *
+ * @lang en
+ * Renders a data-only fetch reader; the static runtime performs requests and state transitions, while HTML contains no
+ * source body.
+ *
+ * @param {object} sourceEntry 已绑定 digest/limit 的内部 asset entry。 / Internal digest/limit-bound asset entry.
+ * @param {object} labels 当前 UI labels。 / Current UI labels.
+ * @returns {string} source reader HTML。 / Source-reader HTML.
+ */
+function renderSourceReader(sourceEntry, labels) {
+  // <lang><zh-CN>integrity 字符串采用 SRI 形态，浏览器 runtime 将算法和值分开校验。</zh-CN><en>The integrity string uses SRI form; browser runtime validates its algorithm and value separately.</en></lang>
+  const integrity = `${sourceEntry.digest.algorithm}-${sourceEntry.digest.value}`;
+  return [
+    `  <div class="source-reader" data-hia-source-reader data-hia-source-state="idle" data-hia-source-url="${escapeHtml(sourceEntry.relativeUrl)}" data-hia-source-integrity="${escapeHtml(integrity)}" data-hia-source-max-bytes="262144" data-hia-source-max-lines="800" data-hia-source-timeout-ms="8000">`,
+    `    <div class="source-reader-actions"><button type="button" data-hia-source-load ${renderLabelAttributes("source.load")}>${escapeHtml(formatUiLabel(labels, "source.load"))}</button><button type="button" data-hia-source-reset hidden ${renderLabelAttributes("source.reset")}>${escapeHtml(formatUiLabel(labels, "source.reset"))}</button></div>`,
+    `    <p class="source-reader-status" aria-live="polite" data-hia-source-status ${renderLabelAttributes("source.state.idle")}>${escapeHtml(formatUiLabel(labels, "source.state.idle"))}</p>`,
+    `    <pre class="source-reader-output" hidden><code data-hia-source-output data-language="${escapeHtml(sourceEntry.language || "javascript")}"></code></pre>`,
+    "  </div>"
+  ].join("\n");
 }
 
 /**
@@ -1426,11 +1554,13 @@ function renderDoclet(doclet, pageI18n, renderOptions = {}) {
  * @param {number} depth 同页层级，仅用于 style/debug marker / Same-page depth for style/debug marker only.
  * @returns {string} HTML list item / HTML list item.
  */
-function renderNavigationNode(node, labels = UI_LABELS.en, depth = 0) {
+function renderNavigationNode(node, labels = UI_LABELS.en, depth = 0, renderOptions = {}) {
   const doclet = node.doclet;
   const label = doclet.name || doclet.longname || "(anonymous)";
   const stableId = node.stableId ? ` data-hia-stable-id="${escapeHtml(node.stableId)}"` : "";
-  const link = `<a class="nav-tree-link" href="#${escapeHtml(getDocletId(doclet))}"${stableId}>${escapeHtml(label)}</a>`;
+  // <lang><zh-CN>multi-page href 来自 owner page map；同页时收敛为 fragment，locale 只改变 route variant。</zh-CN><en>Multi-page href comes from the owner page map; same-page links collapse to fragments and locale changes only the route variant.</en></lang>
+  const href = resolveNavigationHref(doclet, renderOptions);
+  const link = `<a class="nav-tree-link" href="${escapeHtml(href)}"${stableId}>${escapeHtml(label)}</a>`;
 
   if (!node.children.length) {
     return `<li class="nav-tree-item" data-hia-nav-depth="${depth}">${link}</li>`;
@@ -1445,7 +1575,7 @@ function renderNavigationNode(node, labels = UI_LABELS.en, depth = 0) {
     '  <details class="nav-tree-children" data-hia-nav-branch open>',
     `    <summary ${renderLabelAttributes("nav.containedSymbols", { count: childCount })}>${escapeHtml(childLabel)}</summary>`,
     "    <ul>",
-    node.children.map((child) => `      ${renderNavigationNode(child, labels, depth + 1)}`).join("\n"),
+    node.children.map((child) => `      ${renderNavigationNode(child, labels, depth + 1, renderOptions)}`).join("\n"),
     "    </ul>",
     "  </details>",
     "</li>"
@@ -1461,7 +1591,7 @@ function renderNavigationNode(node, labels = UI_LABELS.en, depth = 0) {
  * @param {object} labels 当前 UI labels / Current UI labels.
  * @returns {string} navigation HTML / 导航 HTML.
  */
-function renderNavigation(groups, labels = UI_LABELS.en) {
+function renderNavigation(groups, labels = UI_LABELS.en, renderOptions = {}) {
   if (!groups.length) {
     return `<p class="empty" ${renderLabelAttributes("empty.symbols")}>${escapeHtml(formatUiLabel(labels, "empty.symbols"))}</p>`;
   }
@@ -1474,11 +1604,30 @@ function renderNavigation(groups, labels = UI_LABELS.en) {
       '<section class="nav-group">',
       `  <h2><span ${renderLabelAttributes(labelKey)}>${escapeHtml(groupLabel)}</span> <span>${group.nodeCount}</span></h2>`,
       "  <ul class=\"nav-tree-root\">",
-      group.roots.map((node) => `    ${renderNavigationNode(node, labels)}`).join("\n"),
+      group.roots.map((node) => `    ${renderNavigationNode(node, labels, 0, renderOptions)}`).join("\n"),
       "  </ul>",
       "</section>"
     ].join("\n");
   }).join("\n");
+}
+
+/** @lang zh-CN 解析当前 page/locale 下的 navigation href。 @lang en Resolves a navigation href for the current page/locale. */
+function resolveNavigationHref(doclet, renderOptions = {}) {
+  // <lang><zh-CN>缺失 page map lookup 时安全回退到当前页 fragment。</zh-CN><en>A missing page-map lookup safely falls back to the current-page fragment.</en></lang>
+  const longname = String(doclet && (doclet.longname || doclet.name) || "");
+  const baseHref = renderOptions.hrefByLongname instanceof Map
+    ? renderOptions.hrefByLongname.get(longname)
+    : "";
+  if (!baseHref) {
+    return `#${getDocletId(doclet)}`;
+  }
+
+  // <lang><zh-CN>page file 与 fragment 分开处理，确保 locale suffix 不污染 fragment identity。</zh-CN><en>Handle page file and fragment separately so the locale suffix never pollutes fragment identity.</en></lang>
+  const [baseFile, fragment = ""] = baseHref.split("#", 2);
+  const targetFile = renderOptions.locale ? toLocalePageFile(baseFile, renderOptions.locale) : baseFile;
+  return targetFile === renderOptions.currentPageFile
+    ? `#${fragment}`
+    : `${targetFile}#${fragment}`;
 }
 
 function buildSearchIndex(doclets) {
@@ -1515,7 +1664,7 @@ function buildI18nPageData(pageI18n, options = {}) {
     locales: pageI18n.locales,
     labels: UI_LABELS,
     perLocalePages: pageI18n.locales.reduce((result, locale) => {
-      result[locale] = `index.${locale}.html`;
+      result[locale] = toLocalePageFile(options.pageFile || "index.html", locale);
       return result;
     }, {})
   };
@@ -1529,6 +1678,8 @@ function renderLanguageControls(pageI18n, renderOptions = {}, labels = UI_LABELS
   const selectedLocale = renderOptions.locale || pageI18n.defaultLocale;
   const ariaLabel = escapeHtml(formatUiLabel(labels, "language.controls"));
   const useSelect = shouldUseLanguageSelect(pageI18n, renderOptions);
+  // <lang><zh-CN>base page file 来自 owner page map；语言只增加 route suffix。</zh-CN><en>The base page file comes from the owner page map; locale only adds a route suffix.</en></lang>
+  const basePageFile = renderOptions.pageFile || "index.html";
 
   if (useSelect && renderOptions.locale) {
     return [
@@ -1538,10 +1689,10 @@ function renderLanguageControls(pageI18n, renderOptions = {}, labels = UI_LABELS
       pageI18n.locales
         .map((locale) => {
           const selected = locale === selectedLocale ? " selected" : "";
-          return `    <option value="index.${escapeHtml(locale)}.html"${selected}>${escapeHtml(locale)}</option>`;
+          return `    <option value="${escapeHtml(toLocalePageFile(basePageFile, locale))}"${selected}>${escapeHtml(locale)}</option>`;
         })
         .join("\n"),
-      `    <option value="index.html" ${renderLabelAttributes("language.runtime")}>${escapeHtml(formatUiLabel(labels, "language.runtime"))}</option>`,
+      `    <option value="${escapeHtml(basePageFile)}" ${renderLabelAttributes("language.runtime")}>${escapeHtml(formatUiLabel(labels, "language.runtime"))}</option>`,
       "  </select>",
       "</label>"
     ].join("\n");
@@ -1570,10 +1721,10 @@ function renderLanguageControls(pageI18n, renderOptions = {}, labels = UI_LABELS
         .map((locale) => {
           const active = locale === selectedLocale ? " active" : "";
           const aria = locale === selectedLocale ? ' aria-current="page"' : "";
-          return `<a class="language-link${active}" href="index.${escapeHtml(locale)}.html"${aria}>${escapeHtml(locale)}</a>`;
+          return `<a class="language-link${active}" href="${escapeHtml(toLocalePageFile(basePageFile, locale))}"${aria}>${escapeHtml(locale)}</a>`;
         })
         .join(""),
-      `<a class="language-link" href="index.html" ${renderLabelAttributes("language.runtime")}>${escapeHtml(formatUiLabel(labels, "language.runtime"))}</a>`,
+      `<a class="language-link" href="${escapeHtml(basePageFile)}" ${renderLabelAttributes("language.runtime")}>${escapeHtml(formatUiLabel(labels, "language.runtime"))}</a>`,
       "</nav>"
     ].join("\n");
   }
@@ -1591,28 +1742,62 @@ function renderLanguageControls(pageI18n, renderOptions = {}, labels = UI_LABELS
   ].join("\n");
 }
 
+/** @lang zh-CN 在 `.html` 前加入 locale suffix。 @lang en Inserts a locale suffix before `.html`. */
+function toLocalePageFile(pageFile, locale) {
+  const normalized = String(pageFile || "index.html");
+  return normalized.endsWith(".html")
+    ? `${normalized.slice(0, -5)}.${locale}.html`
+    : `${normalized}.${locale}.html`;
+}
+
 /**
- * 生成单页 native JSDoc HTML；locale 不改变 stable fragment anchor 或 hierarchy identity。
- * Generates one native JSDoc HTML page; locale does not change stable fragment
- * anchors or hierarchy identity.
+ * 生成一个 native JSDoc page projection；page/source/skin/scheme/locale 变体不改变 stable topic identity。
+ * Generates one native JSDoc page projection; page/source/skin/scheme/locale variants do not change stable topic identity.
  *
  * @param {object} options renderer input / renderer 输入。
  * @returns {string} complete HTML document / 完整 HTML 文档.
  */
 function renderPage(options) {
   const title = options.title || "HIA JSDoc";
+  // <lang><zh-CN>navigationDoclets 是整站 identity 集，doclets 只是当前 page body。</zh-CN><en>NavigationDoclets is the site-wide identity set, while doclets is only the current page body.</en></lang>
+  const navigationDoclets = sortDoclets(options.navigationDoclets || options.doclets || []);
   const doclets = sortDoclets(options.doclets || []);
-  const pageI18n = collectPageI18n(doclets);
-  const groups = buildNavigationGroups(doclets);
+  // <lang><zh-CN>presentation model 在 publish 中只构造一次；直接 renderer 调用也可确定性构造。</zh-CN><en>The presentation model is built once by publish; direct renderer calls can also construct it deterministically.</en></lang>
+  const presentationModel = options.presentationModel || buildPresentationProfile(navigationDoclets, {
+    ...(options.presentation || {}),
+    skin: options.theme && options.theme.skin,
+    scheme: options.theme && options.theme.scheme
+  });
+  const pageI18n = collectPageI18n(navigationDoclets);
+  const groups = buildNavigationGroups(navigationDoclets);
+  // <lang><zh-CN>base/current page file 分离，供 locale route 与同页 fragment 判断共用。</zh-CN><en>Base/current page files are separate for locale routes and same-page fragment decisions.</en></lang>
+  const pageFile = options.pageFile || "index.html";
+  const currentPageFile = options.locale ? toLocalePageFile(pageFile, options.locale) : pageFile;
   const renderOptions = {
     locale: options.locale || "",
-    theme: normalizeThemeOptions(options.theme || {})
+    pageFile,
+    currentPageFile,
+    hrefByLongname: presentationModel.partition.hrefByLongname,
+    sourceEntriesByKey: presentationModel.sourceAssets.entriesByKey,
+    presentation: presentationModel.partition.selection,
+    theme: normalizeThemeOptions({
+      ...(options.theme || {}),
+      skin: presentationModel.partition.selection.skinId,
+      scheme: presentationModel.partition.selection.scheme
+    })
   };
   const labels = getUiLabels(getRuntimeLocale(pageI18n, renderOptions));
   const body = doclets.map((doclet) => renderDoclet(doclet, pageI18n, renderOptions)).join("\n");
-  const searchIndex = JSON.stringify(buildSearchIndex(doclets));
+  const searchIndex = JSON.stringify(buildSearchIndex(navigationDoclets));
   const i18nPageData = JSON.stringify(buildI18nPageData(pageI18n, renderOptions) || {});
-  const themeData = JSON.stringify({ code: renderOptions.theme.code });
+  // <lang><zh-CN>theme data 只含 catalog identity、选择与 code preference，不含 CSS 或 owner DOM。</zh-CN><en>Theme data carries only catalog identities, selections, and code preferences, with no CSS or owner DOM.</en></lang>
+  const themeData = JSON.stringify({
+    code: renderOptions.theme.code,
+    skinId: renderOptions.theme.skin.name,
+    scheme: renderOptions.theme.scheme,
+    skins: BUILTIN_THEME_SKIN_CATALOG.map(({ skinId }) => skinId),
+    labels
+  });
   const htmlLang = renderOptions.locale || pageI18n.defaultLocale || "en";
   const symbolCountLabel = formatUiLabel(labels, "summary.symbols", { count: doclets.length });
   const skinName = renderOptions.theme.skin.name;
@@ -1628,7 +1813,7 @@ function renderPage(options) {
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="hia-theme.css">
 </head>
-<body class="hia-skin hia-skin-${escapeHtml(skinName)}${codeWrapClass}" data-hia-skin="${escapeHtml(skinName)}" style="${escapeHtml(codeStyle)}">
+<body class="hia-skin hia-skin-${escapeHtml(skinName)}${codeWrapClass}" data-hia-skin="${escapeHtml(skinName)}" data-hia-scheme="${escapeHtml(renderOptions.theme.scheme)}" data-hia-page-mode="${escapeHtml(renderOptions.presentation.pageMode)}" data-hia-source-mode="${escapeHtml(renderOptions.presentation.sourceMode)}" style="${escapeHtml(codeStyle)}">
   <a class="skip-link" href="#hia-content" ${renderLabelAttributes("skip.content")}>${escapeHtml(formatUiLabel(labels, "skip.content"))}</a>
   <header class="site-header">
     <div>
@@ -1644,8 +1829,9 @@ function renderPage(options) {
     <nav class="sidebar" aria-label="${escapeHtml(formatUiLabel(labels, "nav.symbols"))}" ${renderAriaLabelAttributes("nav.symbols")}>
       <label class="search-label" for="hia-symbol-search" ${renderLabelAttributes("search.label")}>${escapeHtml(formatUiLabel(labels, "search.label"))}</label>
       <input id="hia-symbol-search" class="search-input" type="search" placeholder="${escapeHtml(formatUiLabel(labels, "search.placeholder"))}" ${renderPlaceholderLabelAttributes("search.placeholder")} autocomplete="off" aria-controls="hia-content">
+      ${renderThemeControls(renderOptions, labels)}
       ${renderCodeControls(renderOptions, labels)}
-      ${renderNavigation(groups, labels)}
+      ${renderNavigation(groups, labels, renderOptions)}
     </nav>
     <section class="content" id="hia-content" tabindex="-1">
       ${body || `<p class="empty" ${renderLabelAttributes("empty.symbols")}>${escapeHtml(formatUiLabel(labels, "empty.symbols"))}</p>`}

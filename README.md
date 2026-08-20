@@ -2,7 +2,7 @@
 
 Independent HIA theme for JSDoc.
 
-`@mandolin/jsdoc-theme-hia` renders JSDoc output as a compact API documentation site with navigation, search data, source references, source preview and multilingual display support. It is designed to work as a normal JSDoc theme, and can also consume metadata produced by `@mandolin/jsdoc-plugin-hia-sys`.
+`@mandolin/jsdoc-theme-hia` renders JSDoc output as a compact, multi-page API documentation site with hierarchical navigation, search data, controlled source reading, visible theme selection and multilingual display support. It is designed to work as a normal JSDoc theme, and can also consume metadata produced by `@mandolin/jsdoc-plugin-hia-sys`.
 
 GitHub: <https://github.com/mandolin/jsdoc-theme-hia>
 
@@ -11,6 +11,7 @@ GitHub: <https://github.com/mandolin/jsdoc-theme-hia>
 - Renders common JSDoc doclet kinds: module, class, function, member, constant and typedef.
 - Displays function signatures, params, returns, properties and examples.
 - Provides hierarchical disclosure sidebar navigation and local search data.
+- Uses deterministic multi-page output by default, with an explicit single-page compatibility mode.
 - Reads `doclet.hia.source.definedIn` and `doclet.hia.source.primaryBlock` for definition source links and previews.
 - Reads `doclet.hia.source.references` for explicit source references such as `@coderef`.
 - Reads `doclet.hia.i18n.fields` for field-level multilingual descriptions.
@@ -18,8 +19,10 @@ GitHub: <https://github.com/mandolin/jsdoc-theme-hia>
 - Provides collapsible doclet cards and collapsible sections for params, returns, examples, source and metadata.
 - Supports button or select language controls, with an automatic select mode for larger locale lists.
 - Provides built-in theme skins: `classic`, `lumen` and `graphite`.
+- Provides visible skin and color-scheme controls without changing page or topic identity.
+- Supports `fetch`, `embed`, `link` and privacy-preserving `none` source modes; `fetch` is the default.
 - Provides configurable source code display controls for font, size, line height, tab size and wrapping.
-- Writes `search-index.json`, `i18n-index.json` and `hia-metadata.json`.
+- Writes a body-free `documentation-presentation-profile.json`, an owner route map, search/i18n indexes and theme metadata.
 - Includes basic responsive layout and keyboard focus styles.
 
 ## Install
@@ -82,8 +85,13 @@ To consume HIA metadata, load the companion plugin as well:
         "locales": ["zh-CN", "en"],
         "mode": "runtimeSwitch"
       },
+      "presentation": {
+        "pageMode": "multi-page",
+        "sourceMode": "fetch"
+      },
       "theme": {
         "skin": "classic",
+        "scheme": "system",
         "collapse": {
           "docletsDefaultExpanded": true,
           "sectionsDefaultExpanded": true,
@@ -113,16 +121,21 @@ The theme writes the following files to the configured destination:
 
 - `index.html`
 - `index.{locale}.html`, such as `index.zh-CN.html`
+- one `{topic}-{identity}.html` file per page-owning topic in multi-page mode, plus locale variants
 - `hia-theme.css`
 - `hia-theme.js`
 - `search-index.json`
 - `i18n-index.json`
 - `hia-metadata.json`
+- `documentation-presentation-profile.json`
+- `hia-page-map.json`
+- `sources/{sha256}.txt` in `fetch` and `link` modes
 
 ## Navigation and Deep Links
 
-The sidebar keeps the existing `kind-${slug(longname)}` fragment anchors as the
-`0.1.x` deep-link compatibility surface. When
+The sidebar uses stable, collision-resistant fragment identities derived from
+the JSDoc kind and longname. The readable prefix is followed by a deterministic
+hash suffix. When
 `@mandolin/jsdoc-plugin-hia-sys` provides
 `hia-jsdoc-presentation@0.1.0`, the theme uses its public containment hint;
 otherwise it falls back to the JSDoc `memberof` field. Missing, self-referential
@@ -134,24 +147,28 @@ its `identity.kind`, `identity.longname`, and deterministic
 `stableId` (`jsdoc:${kind}:${longname}`) match the current JSDoc doclet. A
 stale or malformed hint is ignored and therefore cannot change containment;
 the ordinary `memberof`/root fallback remains available. The companion
-`stableId` is not an HTML anchor: the existing fragment compatibility surface
-remains `kind-${slug(longname)}`.
+`stableId` is not an HTML anchor.
 
 The hierarchy uses ordinary `<nav>`, list and native `<details>` disclosure
 elements. It deliberately does not emit an ARIA `tree`/`treeitem` model or
 custom tree keyboard behavior. Locale switching changes labels and localized
-content only; fragment anchors and navigation hrefs are the same in runtime and
-per-locale pages.
+content only; the locale route suffix does not change fragment or topic identity.
 
 ## Source Preview
 
-When used with `@mandolin/jsdoc-plugin-hia-sys`, definition source metadata is rendered in a `Source` section using relative paths. Explicit `@coderef` metadata is rendered separately in a `Source References` section. Both sections can display producer-approved file links, line links, range hints and collapsible embedded source previews. The theme does not fetch source content: `link` and controlled `embed` are the supported display modes, while `fetch` is not applicable.
+When used with `@mandolin/jsdoc-plugin-hia-sys`, definition source metadata is rendered in a `Source` section. Explicit `@coderef` metadata is rendered separately in a `Source References` section. The site selects exactly one source mode:
 
-Each source reference exposes public-safe provenance, relation kind, resolution,
-and display-mode markers. An unresolved reference, or a resolved reference with
-metadata only, remains visible with an availability fallback and never receives
-a fabricated link or preview. These markers do not read a path, locator,
-sidecar, or source body.
+- `fetch` writes content-addressed public assets and loads them on demand with same-origin, credential-free requests, digest verification and explicit reader states.
+- `embed` places producer-approved preview text directly in the generated HTML.
+- `link` opens the generated content-addressed public asset without embedding it.
+- `none` emits no source asset or source-reading surface.
+
+There is no automatic fallback between modes. Source bodies never enter the presentation profile or search index. The renderer consumes only source previews already approved by the producer; it does not infer a source path or read the source repository itself.
+
+Each source reference exposes public-safe provenance, relation kind, resolution
+and the selected display-mode marker. An unresolved reference, or a resolved
+reference without an asset for the selected mode, remains visible with an
+explicit unavailable state and never receives a fabricated link or preview.
 
 ## Multilingual Rendering
 
@@ -167,6 +184,7 @@ The theme consumes field-level translations for descriptions, params, returns, p
 Theme UI behavior can be configured under `opts.hia.theme`:
 
 - `skin`: built-in skin name, currently `classic`, `lumen` or `graphite`.
+- `scheme`: `system`, `light` or `dark`; it is independent from the selected skin.
 - `collapse.docletsDefaultExpanded`: whether doclet cards are expanded by default.
 - `collapse.sectionsDefaultExpanded`: whether content sections are expanded by default.
 - `collapse.metadataDefaultExpanded`: whether metadata sections are expanded by default.
@@ -178,6 +196,11 @@ Theme UI behavior can be configured under `opts.hia.theme`:
 - `code.lineHeight`: default source code line height.
 - `code.tabSize`: default source code tab size.
 - `code.wrap`: whether source code wraps by default.
+
+Page and source behavior can be configured under `opts.hia.presentation`:
+
+- `pageMode`: `multi-page` (default) or `single-page`.
+- `sourceMode`: `fetch` (default), `embed`, `link` or `none`.
 
 ## Font Policy
 

@@ -27,8 +27,13 @@
         "locales": ["zh-CN", "en"],
         "mode": "runtimeSwitch"
       },
+      "presentation": {
+        "pageMode": "multi-page",
+        "sourceMode": "fetch"
+      },
       "theme": {
         "skin": "classic",
+        "scheme": "system",
         "collapse": {
           "docletsDefaultExpanded": true,
           "sectionsDefaultExpanded": true,

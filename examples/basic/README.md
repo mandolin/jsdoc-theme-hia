@@ -8,6 +8,9 @@ This example shows the core theme features:
 - Runtime language switching.
 - Per-locale HTML output.
 - Search data and local filtering.
+- Multi-page output with a single-page compatibility option.
+- Fetch, embed, link and privacy-preserving none source modes.
+- Visible selection among the three built-in skins.
 
 Run:
 
@@ -23,6 +26,10 @@ Expected generated files under `examples/basic/out`:
 - `search-index.json`
 - `i18n-index.json`
 - `hia-metadata.json`
+- `documentation-presentation-profile.json`
+- `hia-page-map.json`
+- topic page HTML files and locale variants
+- content-addressed files under `sources/` for fetch/link mode
 - `hia-theme.css`
 - `hia-theme.js`
 

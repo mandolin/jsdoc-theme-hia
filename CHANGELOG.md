@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Deterministic multi-page output by default with an explicit single-page compatibility mode.
+- Neutral `documentation-presentation-profile@0.1.0-draft` and JTH-owned page-map artifacts.
+- Exclusive `fetch`, `embed`, `link` and `none` source modes with content-addressed public assets and no silent fallback.
+- Credential-free same-origin fetch reader with digest verification and explicit terminal states.
+- Visible selection for the JTH-owned `classic`, `lumen` and `graphite` skins, with independent system/light/dark schemes.
+
+### Changed
+
+- Fragment identities now add a deterministic collision-resistant suffix.
+- Source bodies remain outside the presentation profile and search index.
+
 ## 0.1.2 - 2026-07-30
 
 ### Added
