@@ -5,8 +5,8 @@ const { getHiaPresentation } = require("./metadata-reader.cjs");
 
 /** @lang zh-CN 中性呈现 contract 名称。 @lang en Neutral presentation contract name. */
 const PRESENTATION_PROFILE_CONTRACT = "documentation-presentation-profile";
-/** @lang zh-CN draft exact-match contract 版本。 @lang en Exact-match draft contract version. */
-const PRESENTATION_PROFILE_CONTRACT_VERSION = "0.1.0-draft";
+/** @lang zh-CN 当前写者精确1.0.0身份，主题/路由/源码模式不因版本换代改变。 @lang en Exact current writer identity 1.0.0; theme/routes/source modes remain unchanged by the version migration. */
+const PRESENTATION_PROFILE_CONTRACT_VERSION = "1.0.0";
 /** @lang zh-CN JTH owner page map contract。 @lang en JTH-owned page-map contract. */
 const PAGE_MAP_CONTRACT = "jsdoc-theme-hia/page-map";
 /** @lang zh-CN JTH owner page map 版本。 @lang en JTH-owned page-map version. */

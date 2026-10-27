@@ -238,3 +238,7 @@ Version `0.1.x` is an early public package. The theme is usable for small JSDoc 
 ## License
 
 MIT
+
+## Presentation version compatibility
+
+Current source writes exact documentation-presentation-profile 1.0.0, with page/topic/source/skin identities preserved. Pair plugin handoff and project-runner bridge with this version. Core readers separately retain exact 0.1.0-draft support; old published theme archives are unchanged. The profile remains metadata-only, and source disclosure requires explicit producer approval.

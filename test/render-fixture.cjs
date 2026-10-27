@@ -616,6 +616,7 @@ publish(fakeTaffyData, {
   }
 });
 const publishedProfile = JSON.parse(fs.readFileSync(path.join(publishOutput, "documentation-presentation-profile.json"), "utf8"));
+assert.equal(publishedProfile.contractVersion, "1.0.0");
 const publishedPageMap = JSON.parse(fs.readFileSync(path.join(publishOutput, "hia-page-map.json"), "utf8"));
 const publishedIndex = fs.readFileSync(path.join(publishOutput, "index.html"), "utf8");
 const themeCss = fs.readFileSync(path.resolve(__dirname, "../static/hia-theme.css"), "utf8");
@@ -673,7 +674,7 @@ assert.equal(pageI18nData.perLocalePages.en, "index.en.html");
 assert.equal(pageI18nData.labels["zh-CN"]["search.label"], "搜索符号");
 
 assert.equal(fetchModel.profile.contract, "documentation-presentation-profile");
-assert.equal(fetchModel.profile.contractVersion, "0.1.0-draft");
+assert.equal(fetchModel.profile.contractVersion, "1.0.0");
 assert.equal(fetchModel.profile.pagePartition.defaultMode, "multi-page");
 assert.equal(fetchModel.profile.pagePartition.mode, "multi-page");
 assert.equal(fetchModel.profile.source.defaultMode, "fetch");

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — Presentation profile 1.0.0 source support
+
+- Write exact documentation-presentation-profile 1.0.0 metadata, preserving page/topic/source/skin behavior. This source update does not change package versions or previously published archives.
+
 ## Unreleased
 
 ### Added
