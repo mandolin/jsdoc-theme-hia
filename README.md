@@ -1,5 +1,14 @@
 # @mandolin/jsdoc-theme-hia
 
+## Supported runtime
+
+Current source supports Node.js `^22.23.4 || ^24.22.1`. Release checks use
+Node.js 22.23.4 and 24.22.1 on Windows and Ubuntu; actual package qualification
+and npm availability remain separate. The repository default is Node.js 24.22.1.
+
+中文：当前源码运行范围为上述两条已确认版本线，CI/安装验收与实际npm发布分别核对。
+
+
 Independent HIA theme for JSDoc.
 
 `@mandolin/jsdoc-theme-hia` renders JSDoc output as a compact, multi-page API documentation site with hierarchical navigation, search data, controlled source reading, visible theme selection and multilingual display support. It is designed to work as a normal JSDoc theme, and can also consume metadata produced by `@mandolin/jsdoc-plugin-hia-sys`.
@@ -226,7 +235,7 @@ npm run test:all
 
 ## Compatibility
 
-- Node.js 18 or newer.
+- Node.js `^22.23.4 || ^24.22.1` for the current source candidate; previously published archives retain their own metadata.
 - JSDoc 4.x.
 - CommonJS theme entry.
 - `hia-jsdoc-presentation@0.1.0` is optional; plain JSDoc doclets remain supported.
