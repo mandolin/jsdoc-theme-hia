@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0 source candidate
+
+- 中文：包身份协调1.0.0，开发插件采用固定源码归档及显式锁/SRI；保留原模板/wire/界面，迁移与实际npm发布分开。
+- English: Coordinate package identity at 1.0.0 with a pinned plugin development archive/lock/SRI; preserve template/wire/UI behavior and separate migration from npm publication.
+
 - 中文：实际分发publish回调、输入/默认/错误/文件副作用及生成链API参考，补公共回调双语注释和门禁；现有页面、样式与交互不变。
 - English: Ship the publish callback/input/default/error/file-effect and generation API reference, with bilingual public-callback comments and checks; existing pages, styling and interactions are unchanged.
 

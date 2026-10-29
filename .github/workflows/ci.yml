@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: jsdoc-theme-hia
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -34,11 +38,24 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+        with:
+          path: jsdoc-theme-hia
+
+      - name: Check out pinned plugin owner
+        uses: actions/checkout@v6
+        with:
+          repository: mandolin/jsdoc-plugin-hia-sys
+          ref: 15970dc9da0f8e120677eab7eba3e959dcf42a34
+          path: jsdoc-plugin-hia-sys
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
+
+      - name: Prepare pinned owner archives
+        run: npm run prepare:owners
 
       - name: Install frozen dependencies
         run: npm ci --registry=https://registry.npmjs.org/

@@ -12,7 +12,7 @@ This theme has no bundled runtime dependency besides Node.js built-ins and brows
 
 ## Development Dependencies
 
-- `@mandolin/jsdoc-plugin-hia-sys` `0.1.1` (`MIT`)
+- `@mandolin/jsdoc-plugin-hia-sys` `1.0.0` source candidate from the explicit local tarball (`MIT`)
 - `jsdoc` `4.0.5` (`Apache-2.0`)
 
 `@mandolin/jsdoc-plugin-hia-sys` is used only by development and CI fixture runs to generate HIA metadata consumed by the theme smoke tests.
@@ -42,3 +42,5 @@ Preferred local fonts are open-source families, including Sarasa Gothic / 等距
 ## Legacy Material
 
 Older `docdash-hia` ideas were used as design reference only. This theme is a new implementation and does not copy source files from Docdash or the old repository.
+
+中文：开发插件使用owner-sources.json固定的1.0.0源码归档，不冒充已发布registry版本；MIT保持，锁/SRI由check:owners检查。

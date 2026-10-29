@@ -9,6 +9,7 @@ const requiredFiles = [
   "package.json",
   "README.md",
   "API.md",
+  "MIGRATION.md",
   "CHANGELOG.md",
   "LICENSE",
   "RELEASE_CHECKLIST.md",
@@ -40,7 +41,7 @@ function exists(relativePath) {
  */
 function assertNoGeneratedOutput() {
   assert.equal(exists("examples/basic/out"), false, "examples/basic/out must not be committed");
-  assert.equal(exists("mandolin-jsdoc-theme-hia-0.1.2.tgz"), false, "dry-run tarball must not remain");
+  assert.equal(exists("mandolin-jsdoc-theme-hia-1.0.0.tgz"), false, "dry-run tarball must not remain");
 }
 
 /**
@@ -54,7 +55,7 @@ function run() {
   const exampleConfig = readJson("examples/basic/jsdoc.conf.json");
 
   assert.equal(pkg.name, "@mandolin/jsdoc-theme-hia");
-  assert.equal(pkg.version, "0.1.2");
+  assert.equal(pkg.version, "1.0.0");
   assert.equal(pkg.license, "MIT");
   assert.equal(pkg.private, false);
   assert.equal(pkg.main, "publish.js");

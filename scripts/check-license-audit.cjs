@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
+require("./prepare-owner-packages.cjs").verifyOwnerLock(root);
 const allowedLicenses = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"]);
 const forbiddenLicenseFragments = ["GPL", "AGPL", "LGPL", "SSPL", "BUSL", "BSL"];
 
@@ -20,7 +21,7 @@ const auditRecords = [
   {
     name: "@mandolin/jsdoc-plugin-hia-sys",
     dependencyType: "devDependencies",
-    versionRange: "0.1.1",
+    versionRange: "file:.owner-packages/mandolin-jsdoc-plugin-hia-sys-1.0.0.tgz",
     license: "MIT",
     purpose: "Development and CI fixture plugin used to generate HIA metadata for theme smoke tests."
   },

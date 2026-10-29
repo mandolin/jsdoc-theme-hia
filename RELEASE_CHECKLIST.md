@@ -4,7 +4,7 @@
 
 Package: `@mandolin/jsdoc-theme-hia`
 
-Version: `0.1.1`
+Version: `1.0.0` (source candidate)
 
 ## Required Checks
 
@@ -37,7 +37,7 @@ Version: `0.1.1`
 
 ## Publish Strategy
 
-- Publish version `0.1.1` as the compatible field-i18n and narrow-layout maintenance release.
+- Source candidate version 1.0.0 requires exact-source original archives and complete checks before any publication decision.
 - Use `npm publish --access public` for the scoped package.
 - If publishing before W-P3.5 HIA Integration hardening, publish with `--tag next` and avoid promoting to `latest` until the integration producer contract is confirmed.
 
@@ -46,3 +46,11 @@ Version: `0.1.1`
 - This is a single-page theme with per-locale HTML variants.
 - Search is local filtering, not a full search engine.
 - The theme is optimized for the JPHS metadata contract first.
+
+## Frozen source development
+
+- Prepare exact owner-sources.json archives with npm run prepare:owners before npm ci.
+- Verify npm run check:owners, committed-lock stability and original-manifest consumption.
+- Confirm registry/provenance and manual visual checks separately; a source candidate does not mark these boxes complete.
+
+中文：固定源码与冻结安装是候选门禁，实际发行和视觉验收仍独立。

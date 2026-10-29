@@ -1,6 +1,6 @@
 {
   "name": "@mandolin/jsdoc-theme-hia",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "private": false,
   "description": "Independent HIA theme for JSDoc.",
   "license": "MIT",
@@ -28,20 +28,23 @@
     "CHANGELOG.md",
     "RELEASE_CHECKLIST.md",
     "THIRD_PARTY_NOTICES.md",
-    "LICENSE"
+    "LICENSE",
+    "MIGRATION.md"
   ],
   "scripts": {
-    "check:syntax": "node --check scripts/check-runtime-policy.cjs && node --check test/runtime-policy.test.cjs && node --check publish.js && node --check src/metadata-reader.cjs && node --check src/presentation-profile.cjs && node --check src/render.cjs && node --check static/hia-theme.js && node --check test/render-fixture.cjs && node --check test/public-api.test.cjs && node --check scripts/clean-generated.cjs && node --check scripts/check-example-governance.cjs && node --check scripts/check-license-audit.cjs && node --check scripts/release-check.cjs",
+    "check:syntax": "node --check scripts/check-runtime-policy.cjs && node --check test/runtime-policy.test.cjs && node --check publish.js && node --check src/metadata-reader.cjs && node --check src/presentation-profile.cjs && node --check src/render.cjs && node --check static/hia-theme.js && node --check test/render-fixture.cjs && node --check test/public-api.test.cjs && node --check test/candidate.test.cjs && node --check test/owner-packages.test.cjs && node --check scripts/prepare-owner-packages.cjs && node --check scripts/clean-generated.cjs && node --check scripts/check-example-governance.cjs && node --check scripts/check-license-audit.cjs && node --check scripts/release-check.cjs",
     "clean:examples": "node scripts/clean-generated.cjs",
     "governance:check": "node scripts/check-example-governance.cjs",
     "license:audit": "node scripts/check-license-audit.cjs",
-    "release:gate": "npm run runtime:check && npm run test:runtime-policy && npm run test:all && npm pack --dry-run --json",
+    "release:gate": "npm run check:owners && npm run runtime:check && npm run test:runtime-policy && npm run test:all && npm pack --dry-run --json",
     "release:check": "node scripts/release-check.cjs && npm pack --dry-run",
-    "test": "node test/render-fixture.cjs && node --test test/public-api.test.cjs",
+    "test": "node test/render-fixture.cjs && node --test test/public-api.test.cjs test/candidate.test.cjs test/owner-packages.test.cjs",
     "test:jsdoc": "npx --yes jsdoc@4.0.5 -c examples/basic/jsdoc.conf.json",
     "test:all": "npm run check:syntax && npm test && npm run test:jsdoc && npm run clean:examples && npm run governance:check && npm run license:audit && npm run release:check",
     "runtime:check": "node scripts/check-runtime-policy.cjs",
-    "test:runtime-policy": "node --test test/runtime-policy.test.cjs"
+    "test:runtime-policy": "node --test test/runtime-policy.test.cjs",
+    "prepare:owners": "node scripts/prepare-owner-packages.cjs",
+    "check:owners": "node -e \"require('./scripts/prepare-owner-packages.cjs').verifyOwnerLock(process.cwd())\""
   },
   "keywords": [
     "jsdoc",
@@ -56,7 +59,7 @@
     "jsdoc": "^4.0.0"
   },
   "devDependencies": {
-    "@mandolin/jsdoc-plugin-hia-sys": "0.1.1",
+    "@mandolin/jsdoc-plugin-hia-sys": "file:.owner-packages/mandolin-jsdoc-plugin-hia-sys-1.0.0.tgz",
     "jsdoc": "4.0.5"
   },
   "engines": {

@@ -242,7 +242,7 @@ npm run test:all
 
 ## Stability
 
-Version `0.1.x` is an early public package. The theme is usable for small JSDoc projects and metadata experiments, but the rendering contract may evolve before a stable release.
+Current source is a 1.0.0 package candidate; npm publication and visual release qualification remain separate. Existing page-map 0.1.0 compatibility obligations are retained.
 
 ## License
 
@@ -257,3 +257,9 @@ Current source writes exact documentation-presentation-profile 1.0.0, with page/
 See the shipped [API reference](API.md) for every root/nested export, callback signature, defaults, Errors, Side effects and generated-artifact compatibility.
 
 中文：包内API参考覆盖实际根/嵌套公开面、默认值、错误、副作用及生成链责任，不将未发布源码当npm发行。
+
+## Source development and migration
+
+See [MIGRATION.md](MIGRATION.md). Before npm ci, run npm run prepare:owners with the exact sibling plugin checkout declared in owner-sources.json. The explicit local tarball/SRI development source avoids assuming an unpublished registry version exists. It does not rewrite manifests or publish packages.
+
+中文：源码候选1.0.0；开发先核固定owner归档再冻结安装，公开消费/实际发布另验。
