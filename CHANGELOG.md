@@ -1,5 +1,8 @@
 # Changelog
 
+- 中文：实际分发publish回调、输入/默认/错误/文件副作用及生成链API参考，补公共回调双语注释和门禁；现有页面、样式与交互不变。
+- English: Ship the publish callback/input/default/error/file-effect and generation API reference, with bilingual public-callback comments and checks; existing pages, styling and interactions are unchanged.
+
 ## Unreleased — Supported runtime baseline
 
 - 源清单、锁与本地/CI运行基线对齐Node.js 22.23.4和24.22.1，两平台门禁及拒绝漂移检查同步；旧已发布工件不改写，本次不发布npm。

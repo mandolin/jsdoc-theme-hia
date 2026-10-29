@@ -251,3 +251,9 @@ MIT
 ## Presentation version compatibility
 
 Current source writes exact documentation-presentation-profile 1.0.0, with page/topic/source/skin identities preserved. Pair plugin handoff and project-runner bridge with this version. Core readers separately retain exact 0.1.0-draft support; old published theme archives are unchanged. The profile remains metadata-only, and source disclosure requires explicit producer approval.
+
+## JavaScript API reference
+
+See the shipped [API reference](API.md) for every root/nested export, callback signature, defaults, Errors, Side effects and generated-artifact compatibility.
+
+中文：包内API参考覆盖实际根/嵌套公开面、默认值、错误、副作用及生成链责任，不将未发布源码当npm发行。
