@@ -27,6 +27,9 @@ asset URLs and bytes remain unchanged. Known one-based range starts provide
 `#L` anchors. Missing range metadata retains a plain excerpt and an explicit
 unavailable-line state. `sourceMode: "none"` emits no source readers or assets.
 
+The publisher retains existing destination files. A fresh destination gives
+disclosure-mode changes a clean publication boundary.
+
 中文说明。源码阅读仅消费生产者已批准的片段，不额外读取源码文件。片段的行号与定位精度按原元数据及来源证据说明，原生更多语言变体沿既有路径呈现。完整官网部署及npm发行状态请分别核对实际采用与发布说明。
 
 中文摘要：唯一公开根回调为publish，数据来自JSDoc查询函数及插件已生成元数据；普通doclet可用，不把原源码读取、精度或公开授权交给模板猜测。现有布局/交互保持，机器输出测试不等同视觉验收。

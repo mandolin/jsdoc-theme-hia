@@ -89,7 +89,7 @@ function renderSourcePage(site, source, locale, outputPath) {
   return site.chrome.renderPage({ role: "source", outputPath, uiLocale: locale, localePages: source.localePages,
     title: `${owner.name || owner.longname} · ${title}`, stylesheets: ["hia-theme.css", "hia-site-adapter.css"],
     directoryHtml: `<nav><a href="../${escape(route)}">${zh ? "返回接口" : "Return to the API"} · ${escape(owner.name || owner.longname)}</a></nav>`,
-    bodyHtml: `<h1>${title}</h1><p>${escape(owner.name || owner.longname)}</p><section id="hia-source-status" data-hia-reading-section="source-status"><h3>${zh ? "源码与来源" : "Source and provenance"}</h3><p class="hia-site-notice">${boundary}${source.firstLine ? "" : zh ? " 未提供源码行号。" : " Source line numbers are unavailable."}</p></section><section id="hia-source-snippet" data-hia-reading-section="source-snippet"><h3>${zh ? "源码片段" : "Source excerpt"}</h3><pre class="hia-source-code"><code>${code}</code></pre></section>`,
+    bodyHtml: `<h1>${title}</h1><p>${escape(owner.name || owner.longname)}</p><section id="hia-source-status" data-hia-reading-section="source-status"><h2>${zh ? "源码与来源" : "Source and provenance"}</h2><p class="hia-site-notice">${boundary}${source.firstLine ? "" : zh ? " 未提供源码行号。" : " Source line numbers are unavailable."}</p></section><section id="hia-source-snippet" data-hia-reading-section="source-snippet"><h2>${zh ? "源码片段" : "Source excerpt"}</h2><pre class="hia-source-code" tabindex="0"><code>${code}</code></pre></section>`,
     sections: [{ id: "hia-source-status", label: zh ? "源码与来源" : "Source and provenance" }, { id: "hia-source-snippet", label: zh ? "源码片段" : "Source excerpt" }] });
 }
 

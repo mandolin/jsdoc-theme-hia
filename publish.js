@@ -112,7 +112,7 @@ function toLocalePageFile(pageFile, locale) {
  * @lang zh-CN JSDoc公开publish回调；把普通doclet和已批准源元数据写为页面、固定资产及版本化元数据，不授权源公开。
  * @lang en Public JSDoc publish callback writing plain doclets and approved source metadata into pages, fixed assets and versioned metadata; it does not authorize source disclosure.
  * @param {Function} data <lang><zh-CN>JSDoc查询函数，data().get()返回doclet数组；非函数按空输入处理。</zh-CN><en>JSDoc query function returning doclets from data().get(); non-functions are treated as empty input.</en></lang>
- * @param {object} opts <lang><zh-CN>JSDoc选项，destination省略取out；hia含主题/呈现选择。</zh-CN><en>JSDoc options; destination defaults to out, with theme/presentation selections under hia.</en></lang>
+ * @param {object} opts <lang><zh-CN>JSDoc选项，destination省略取out；hia含主题/呈现及可选siteNavigation/显式uiLocale选择。</zh-CN><en>JSDoc options; destination defaults to out, with theme/presentation and optional siteNavigation/explicit uiLocale selections under hia.</en></lang>
  * @returns {void} <lang><zh-CN>同步写入完成，无返回值；不清空已有输出目录。</zh-CN><en>Completes synchronous writes with no return value; does not clear existing output directories.</en></lang>
  * @throws {Error} 本地I/O或不支持的呈现选择；调用方应按公开诊断策略处理原错误。 / Local I/O or unsupported presentation selection; callers apply their public-diagnostic policy to original errors.
  */

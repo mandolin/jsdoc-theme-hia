@@ -1059,7 +1059,7 @@ function renderParamTable(titleKey, items, doclet, pageI18n, renderOptions = {},
   });
 
   const body = [
-    '  <div class="table-wrap">',
+    `  <div class="table-wrap"${renderOptions.siteChrome ? ` tabindex="0" role="region" aria-label="${escapeHtml(getDocletTitle(doclet) + " · " + formatUiLabel(labels, titleKey))}"` : ""}>`,
     '    <table class="doc-table">',
     "      <thead>",
     "        <tr>",
@@ -1097,7 +1097,7 @@ function renderReturns(doclet, pageI18n, renderOptions = {}, labels = UI_LABELS.
   ].join("\n"));
 
   const body = [
-    '  <div class="table-wrap">',
+    `  <div class="table-wrap"${renderOptions.siteChrome ? ` tabindex="0" role="region" aria-label="${escapeHtml(getDocletTitle(doclet) + " · " + formatUiLabel(labels, "section.returns"))}"` : ""}>`,
     '    <table class="doc-table compact">',
     `      <thead><tr><th ${renderLabelAttributes("table.type")}>${escapeHtml(formatUiLabel(labels, "table.type"))}</th><th ${renderLabelAttributes("table.description")}>${escapeHtml(formatUiLabel(labels, "table.description"))}</th></tr></thead>`,
     `      <tbody>${rows.join("\n")}</tbody>`,
@@ -1839,6 +1839,8 @@ function renderPage(options) {
       sections.push({ id, label: stripHtml(label) });
       return `<details id="${id}" data-hia-reading-section="native" class="${classes}"${attributes}>${heading}`;
     });
+    // <lang><zh-CN>窄屏长行/表格的局部滚动区域可由键盘聚焦，正文与原生table语义保持。</zh-CN><en>Local overflow areas for narrow-screen long lines/tables are keyboard-focusable while retaining prose and native table semantics.</en></lang>
+    body = body.replace(/<pre\b/gu, '<pre tabindex="0"');
     const links = renderNavigation(groups, labels, renderOptions).replace(/<a class="nav-tree-link" href="([^"]+)"/gu, (match, href) => `${match}${doclets.some(doclet => href === `#${getDocletId(doclet)}`) ? ' aria-current="page"' : ""}`);
     return siteChrome.chrome.renderPage({
       role: doclets.length ? "entry" : "index", outputPath: currentPageFile, uiLocale: renderOptions.locale,
