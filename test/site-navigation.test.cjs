@@ -12,7 +12,10 @@ const test = require("node:test");
 const { execFileSync } = require("node:child_process");
 const { publish } = require("../publish.js");
 
-/** @lang zh-CN 合成双语导航，无历史封版。 @lang en Synthetic bilingual navigation without historical snapshots. */
+/**
+ * @lang zh-CN 合成双语导航，无历史封版。
+ * @lang en Synthetic bilingual navigation without historical snapshots.
+ */
 function navigation() {
   const targets = { "zh-CN": "/docs/zh-CN/", en: "/docs/en/" };
   return {
@@ -25,7 +28,10 @@ function navigation() {
   };
 }
 
-/** @lang zh-CN 探针独占目录，清理前验证真实父路径。 @lang en Probe-owned directory with real-parent checks before cleanup. */
+/**
+ * @lang zh-CN 探针独占目录，清理前验证真实父路径。
+ * @lang en Probe-owned directory with real-parent checks before cleanup.
+ */
 function fixture(action) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "hia-site-chrome-"));
   try { action(directory); }
@@ -107,4 +113,15 @@ test("plain content keeps an unknown language independently of the selected Chin
   assert.ok(html.includes('<html lang="zh-CN"'));
   assert.ok(html.includes('class="description" lang=""'));
   assert.ok(html.includes('class="i18n-field" lang=""'));
+}));
+
+test("shared search uses native summaries and excludes localized example bodies", () => fixture(directory => {
+  const doclet = { kind: "function", name: "indexed", longname: "indexed", description: "Searchable public summary.", hia: { i18n: {
+    enabled: true, defaultLocale: "en", fallbackLocale: "en", locales: ["en"],
+    fields: { "examples.0.body": { localizedText: { en: "SYNTHETIC_EXAMPLE_BODY_ONLY" } } }
+  } } };
+  publish(() => ({ get: () => [doclet] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "en" } });
+  const index = fs.readFileSync(path.join(directory, "assets/hia-site-search.json"), "utf8");
+  assert.ok(index.includes("Searchable public summary."));
+  assert.equal(index.includes("SYNTHETIC_EXAMPLE_BODY_ONLY"), false);
 }));

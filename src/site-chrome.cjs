@@ -5,13 +5,20 @@
  */
 "use strict";
 const { getPresentationFragmentId, getPrimarySourceKey, getReferenceSourceKey } = require("./presentation-profile.cjs");
+const { buildSearchIndex } = require("./render.cjs");
 
-/** @lang zh-CN 转义公开标签与属性。 @lang en Escapes public labels and attributes. */
+/**
+ * @lang zh-CN 转义公开标签与属性。
+ * @lang en Escapes public labels and attributes.
+ */
 function escape(value) {
   return String(value).replace(/[&<>"']/gu, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
 
-/** @lang zh-CN 在既有HTML页面名中加入真实语言变体。 @lang en Adds an actual locale variant to an existing HTML page name. */
+/**
+ * @lang zh-CN 在既有HTML页面名中加入真实语言变体。
+ * @lang en Adds an actual locale variant to an existing HTML page name.
+ */
 function localized(file, locale) { return file.replace(/\.html$/u, `.${locale}.html`); }
 
 /**
@@ -35,14 +42,16 @@ function prepareSiteChrome(opts, doclets, model, i18n) {
   // <lang><zh-CN>只有本次确实生成的两种界面语言可进入页面对应表，原生额外语言页仍按原路径输出。</zh-CN><en>Only actually generated supported UI locales enter the counterpart table; additional native locale pages retain their existing routes.</en></lang>
   const locales = i18n.enabled ? i18n.locales.filter(locale => ["en", "zh-CN"].includes(locale)) : [];
   const localePages = file => Object.fromEntries(locales.map(locale => [locale, localized(file, locale)]));
+  // <lang><zh-CN>检索复用原生公开摘要，源码与示例正文只进入其原呈现面。</zh-CN><en>Reuse native public summaries for search, keeping source and example bodies on their original presentation surfaces.</en></lang>
+  const summaries = new Map(buildSearchIndex(doclets).map(entry => [entry.id, entry]));
   // <lang><zh-CN>原页映射决定检索目标，身份使用原生fragment，不另造命令或函数节点。</zh-CN><en>The native page map determines search targets; identities retain native fragments without manufacturing command/function nodes.</en></lang>
   const entries = doclets.map(doclet => {
     const id = getPresentationFragmentId(doclet);
     const page = model.partition.hrefByLongname.get(doclet.longname || doclet.name) || `index.html#${id}`;
     const [file, fragment] = page.split("#");
-    const fields = doclet.hia?.i18n?.fields || {};
+    const summary = summaries.get(id);
     return { id, name: doclet.name || doclet.longname || "", kind: doclet.kind || "unknown", page,
-      searchText: [doclet.name, doclet.longname, doclet.description, ...Object.values(fields).flatMap(field => Object.values(field.localizedText || {}))].filter(Boolean).join(" "),
+      searchText: [summary.name, summary.longname, summary.memberof, summary.summary, ...Object.values(summary.localizedSummaries)].filter(Boolean).join(" "),
       localePages: Object.fromEntries(Object.entries(localePages(file)).map(([locale, route]) => [locale, route + (fragment ? `#${fragment}` : "")])) };
   });
   const chrome = shared.createSiteChrome({ navigation: opts.hia.siteNavigation, entries });

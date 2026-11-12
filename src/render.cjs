@@ -776,7 +776,10 @@ function renderSignature(doclet) {
   return `${doclet.name || doclet.longname || "(anonymous)"}${paramList}${returnText}`;
 }
 
-/** @lang zh-CN 保留原生分类/作用域/来源计数，共享界面按其实际语言呈现类别。 @lang en Retains native kind/scope/source counts while localizing kinds for shared UI. */
+/**
+ * @lang zh-CN 保留原生分类/作用域/来源计数，共享界面按其实际语言呈现类别。
+ * @lang en Retains native kind/scope/source counts while localizing kinds for shared UI.
+ */
 function renderBadges(doclet, hiaSummary, renderOptions = {}) {
   const labels = getUiLabels(renderOptions.locale || "en");
   // <lang><zh-CN>仅翻译已知类别，领域扩展仍显示原生类别文字。</zh-CN><en>Translate known kinds only, retaining native text for domain extensions.</en></lang>
