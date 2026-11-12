@@ -104,6 +104,9 @@ const UI_LABELS = {
     "theme.controls": "Theme",
     "theme.skin": "Skin",
     "theme.scheme": "Color scheme",
+    "section.signature": "Signature",
+    "source.reader": "Read source excerpt",
+    "source.boundary": "Producer-approved excerpt; position precision depends on source evidence.",
     "section.parameters": "Parameters",
     "section.properties": "Properties",
     "section.returns": "Returns",
@@ -193,6 +196,9 @@ const UI_LABELS = {
     "theme.controls": "主题",
     "theme.skin": "皮肤",
     "theme.scheme": "配色方案",
+    "section.signature": "签名",
+    "source.reader": "独立阅读源码片段",
+    "source.boundary": "生产者已批准的片段，定位精度以来源证据为准。",
     "section.parameters": "参数",
     "section.properties": "属性",
     "section.returns": "返回值",
@@ -503,10 +509,12 @@ function renderCollapsibleSection(titleKey, body, labels, renderOptions, options
   const className = options.className || "doc-section";
   const target = options.target || "sections";
   const open = getCollapseOpenAttribute(renderOptions, target);
+  // <lang><zh-CN>共享正文小节相对实际条目标题下降一级，原生路径保持既有h3。</zh-CN><en>Shared prose sections descend one level from the actual entry heading; native output retains its h3.</en></lang>
+  const heading = renderOptions.siteChrome && renderOptions.headingLevel === 1 ? "h2" : "h3";
 
   return [
     `<details class="${escapeHtml(className)} collapsible-section"${open}>`,
-    `  <summary class="section-summary collapse-summary"><h3 ${renderLabelAttributes(titleKey)}>${escapeHtml(formatUiLabel(labels, titleKey))}</h3></summary>`,
+    `  <summary class="section-summary collapse-summary"><${heading} ${renderLabelAttributes(titleKey)}>${escapeHtml(formatUiLabel(labels, titleKey))}</${heading}></summary>`,
     '  <div class="section-body">',
     body,
     "  </div>",
@@ -768,9 +776,14 @@ function renderSignature(doclet) {
   return `${doclet.name || doclet.longname || "(anonymous)"}${paramList}${returnText}`;
 }
 
-function renderBadges(doclet, hiaSummary) {
+/** @lang zh-CN 保留原生分类/作用域/来源计数，共享界面按其实际语言呈现类别。 @lang en Retains native kind/scope/source counts while localizing kinds for shared UI. */
+function renderBadges(doclet, hiaSummary, renderOptions = {}) {
+  const labels = getUiLabels(renderOptions.locale || "en");
+  // <lang><zh-CN>仅翻译已知类别，领域扩展仍显示原生类别文字。</zh-CN><en>Translate known kinds only, retaining native text for domain extensions.</en></lang>
+  const kindKey = `kind.${doclet.kind || "unknown"}`;
+  const kind = renderOptions.siteChrome && labels[kindKey] ? formatUiLabel(labels, kindKey) : doclet.kind || "unknown";
   const badges = [
-    `<span class="badge">${escapeHtml(doclet.kind || "unknown")}</span>`
+    `<span class="badge">${escapeHtml(kind)}</span>`
   ];
 
   if (doclet.scope) {
@@ -782,7 +795,8 @@ function renderBadges(doclet, hiaSummary) {
   }
 
   if (hiaSummary.sourceReferenceCount > 0) {
-    badges.push(`<span class="badge source">${hiaSummary.sourceReferenceCount} source</span>`);
+    const label = renderOptions.siteChrome ? renderOptions.locale === "zh-CN" ? "条源码引用" : " source references" : " source";
+    badges.push(`<span class="badge source">${hiaSummary.sourceReferenceCount}${label}</span>`);
   }
 
   return `<div class="badges">${badges.join("")}</div>`;
@@ -1202,8 +1216,12 @@ function renderDocletSource(doclet, labels = UI_LABELS.en, renderOptions = {}) {
   // <lang><zh-CN>none 是显式隐私态，源码区段与 locator 一起隐藏。</zh-CN><en>None is the explicit privacy state and hides the source section together with its locator.</en></lang>
   const selectedMode = renderOptions.presentation && renderOptions.presentation.sourceMode || "fetch";
 
-  if (selectedMode === "none" || !source || (!source.definedIn && !source.primaryBlock)) {
+  if (selectedMode === "none") {
     return "";
+  }
+  if (!source || (!source.definedIn && !source.primaryBlock)) {
+    // <lang><zh-CN>共享界面明确表达未提供来源；纯文档节点不会据路径发起读取。</zh-CN><en>Shared UI explicitly reports unavailable provenance; plain doclets never trigger path-based reads.</en></lang>
+    return renderOptions.siteChrome ? renderCollapsibleSection("section.source", `<p>${escapeHtml(formatUiLabel(labels, "source.metadataOnly"))}</p>`, labels, renderOptions) : "";
   }
 
   // <lang><zh-CN>definedIn 优先，primaryBlock 仅作为已有 metadata 的位置回退，不创建新的 provenance。</zh-CN><en>Prefer definedIn; primaryBlock is only a location fallback from existing metadata and creates no new provenance.</en></lang>
@@ -1510,18 +1528,23 @@ function renderDoclet(doclet, pageI18n, renderOptions = {}) {
   const labels = getUiLabels(getRuntimeLocale(pageI18n, renderOptions));
   const open = getCollapseOpenAttribute(renderOptions, "doclets");
 
+  // <lang><zh-CN>共享框架下仍复用原字段渲染，只将顶层卡片投影为确认稿正文层级。</zh-CN><en>Shared chrome reuses native field rendering while projecting the outer card into the confirmed prose hierarchy.</en></lang>
+  const site = renderOptions.siteChrome;
+  const heading = renderOptions.headingLevel === 1 ? "h1" : "h2";
+  const sourceLinks = site?.sourceLinks.get(getDocletId(doclet)) || [];
   return [
     `<article class="doclet" id="${escapeHtml(getDocletId(doclet))}" data-kind="${escapeHtml(doclet.kind || "unknown")}">`,
-    `  <details class="doclet-details"${open}>`,
-    '    <summary class="doclet-summary collapse-summary">',
+    site ? '  <div class="doclet-details">' : `  <details class="doclet-details"${open}>`,
+    site ? '    <header class="doclet-summary">' : '    <summary class="doclet-summary collapse-summary">',
     '      <div class="doclet-summary-main">',
-    `        <h2>${escapeHtml(title)}</h2>`,
-    renderBadges(doclet, hia),
+    site ? `        <${heading}>${escapeHtml(title)}</${heading}>` : `        <h2>${escapeHtml(title)}</h2>`,
+    site ? renderLocalizedDescription(doclet, pageI18n, renderOptions) : "",
+    renderBadges(doclet, hia, renderOptions),
     "      </div>",
-    "    </summary>",
+    site ? "    </header>" : "    </summary>",
     '    <div class="doclet-body">',
-    `      <pre class="signature"><code>${escapeHtml(renderSignature(doclet))}</code></pre>`,
-    renderLocalizedDescription(doclet, pageI18n, renderOptions),
+    site ? `<div class="hia-site-declaration"><p class="hia-site-code-label">${escapeHtml(formatUiLabel(labels, "section.signature"))}</p><pre class="signature hia-signature"><code>${escapeHtml(renderSignature(doclet))}</code></pre></div>` : `      <pre class="signature"><code>${escapeHtml(renderSignature(doclet))}</code></pre>`,
+    site ? "" : renderLocalizedDescription(doclet, pageI18n, renderOptions),
     renderParamTable("section.parameters", doclet.params, doclet, pageI18n, renderOptions, {
       labels,
       name: getParamDisplayName,
@@ -1535,9 +1558,10 @@ function renderDoclet(doclet, pageI18n, renderOptions = {}) {
     renderExamples(doclet, pageI18n, renderOptions, labels),
     renderDocletSource(doclet, labels, renderOptions),
     renderSourceReferences(doclet, labels, renderOptions),
+    site && sourceLinks.length ? `<p class="hia-site-source-boundary">${escapeHtml(formatUiLabel(labels, "source.boundary"))}</p><div class="hia-site-source-links">${sourceLinks.map(source => `<a href="${escapeHtml(renderOptions.locale && site.locales.includes(renderOptions.locale) ? toLocalePageFile(source.file, renderOptions.locale) : source.file)}${source.firstLine ? `#L${source.firstLine}` : ""}">${escapeHtml(formatUiLabel(labels, "source.reader"))}</a>`).join("")}</div>` : "",
     renderMetadataList(doclet, hia, labels, renderOptions),
     "    </div>",
-    "  </details>",
+    site ? "  </div>" : "  </details>",
     "</article>"
   ]
     .filter(Boolean)
@@ -1773,8 +1797,11 @@ function renderPage(options) {
   // <lang><zh-CN>base/current page file 分离，供 locale route 与同页 fragment 判断共用。</zh-CN><en>Base/current page files are separate for locale routes and same-page fragment decisions.</en></lang>
   const pageFile = options.pageFile || "index.html";
   const currentPageFile = options.locale ? toLocalePageFile(pageFile, options.locale) : pageFile;
+  // <lang><zh-CN>共享框架支持两种明确界面语言，其他原生语言变体沿原生呈现，不隐式改译文。</zh-CN><en>Shared chrome supports two explicit UI locales; other native locale variants retain native presentation without implicit translation.</en></lang>
+  const siteChrome = options.siteChrome && (!options.locale || options.siteChrome.locales.includes(options.locale)) ? options.siteChrome : null;
   const renderOptions = {
-    locale: options.locale || "",
+    locale: options.locale || siteChrome?.uiLocale || "",
+    siteChrome,
     pageFile,
     currentPageFile,
     hrefByLongname: presentationModel.partition.hrefByLongname,
@@ -1787,7 +1814,7 @@ function renderPage(options) {
     })
   };
   const labels = getUiLabels(getRuntimeLocale(pageI18n, renderOptions));
-  const body = doclets.map((doclet) => renderDoclet(doclet, pageI18n, renderOptions)).join("\n");
+  let body = doclets.map((doclet, index) => renderDoclet(doclet, pageI18n, siteChrome ? { ...renderOptions, headingLevel: index === 0 ? 1 : 2 } : renderOptions)).join("\n");
   const searchIndex = JSON.stringify(buildSearchIndex(navigationDoclets));
   const i18nPageData = JSON.stringify(buildI18nPageData(pageI18n, renderOptions) || {});
   // <lang><zh-CN>theme data 只含 catalog identity、选择与 code preference，不含 CSS 或 owner DOM。</zh-CN><en>Theme data carries only catalog identities, selections, and code preferences, with no CSS or owner DOM.</en></lang>
@@ -1803,6 +1830,26 @@ function renderPage(options) {
   const skinName = renderOptions.theme.skin.name;
   const codeWrapClass = renderOptions.theme.code.wrap ? " hia-code-wrap" : "";
   const codeStyle = renderCodeStyle(renderOptions.theme.code);
+
+  if (siteChrome) {
+    // <lang><zh-CN>实际字段标题生成稳定小节锚点，原doclet/页映射身份完全复用。</zh-CN><en>Actual field headings receive stable section anchors while native doclet/page-map identities are reused.</en></lang>
+    const sections = [];
+    body = body.replace(/<details class="([^"]*collapsible-section)"([^>]*)>(\s*<summary[^>]*><h[23][^>]*>([\s\S]*?)<\/h[23]>)/gu, (match, classes, attributes, heading, label) => {
+      const id = `hia-native-section-${sections.length + 1}`;
+      sections.push({ id, label: stripHtml(label) });
+      return `<details id="${id}" data-hia-reading-section="native" class="${classes}"${attributes}>${heading}`;
+    });
+    const links = renderNavigation(groups, labels, renderOptions).replace(/<a class="nav-tree-link" href="([^"]+)"/gu, (match, href) => `${match}${doclets.some(doclet => href === `#${getDocletId(doclet)}`) ? ' aria-current="page"' : ""}`);
+    return siteChrome.chrome.renderPage({
+      role: doclets.length ? "entry" : "index", outputPath: currentPageFile, uiLocale: renderOptions.locale,
+      localePages: siteChrome.localePages(pageFile), title: doclets[0] ? `${getDocletTitle(doclets[0])} · ${title}` : title,
+      directoryHtml: `<nav aria-label="${escapeHtml(formatUiLabel(labels, "nav.symbols"))}">${links}</nav>`,
+      bodyHtml: body || `<h1>${escapeHtml(title)}</h1><p>${escapeHtml(symbolCountLabel)}</p>`, sections,
+      stylesheets: ["hia-theme.css", "hia-site-adapter.css"], scripts: ["hia-theme.js"],
+      dataHtml: `<script type="application/json" id="hia-search-data">${escapeJsonScript(searchIndex)}</script><script type="application/json" id="hia-i18n-data">${escapeJsonScript(i18nPageData)}</script><script type="application/json" id="hia-theme-data">${escapeJsonScript(themeData)}</script>`,
+      scheme: renderOptions.theme.scheme
+    });
+  }
 
   return `<!doctype html>
 <html lang="${escapeHtml(htmlLang)}">

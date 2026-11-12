@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Shared host navigation
+
+- 中文：以可选renderer-html peer同步接入正式site-chrome子入口，增加显式站点/界面语言、固定顶部、实际同页切换、公共检索与设置；保留原生字段、身份与page-map版本。
+- English: Synchronously consume the public site-chrome subpath through an optional renderer-html peer, adding explicit site/UI locale, fixed navigation, actual page counterparts, shared search and settings while retaining native fields, identities and page-map version.
+- 中文：为获准源码slot生成无脚本行号阅读页，保留原文本资产与来源精度边界，缺来源/语言、错误输入及未选择路径分别处理。
+- English: Generate script-free line readers for admitted source slots while retaining original text assets and provenance boundaries, handling missing source/locales, invalid inputs and unselected calls explicitly.
+
 ## 1.0.0 source candidate
 
 - 中文：包身份协调1.0.0，开发插件采用固定源码归档及显式锁/SRI；保留原模板/wire/界面，迁移与实际npm发布分开。

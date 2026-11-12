@@ -1,5 +1,34 @@
 # JSDoc template API and output files
 
+## Optional host navigation
+
+`publish` accepts `opts.hia.siteNavigation` using the existing
+`documentation-site-navigation@0.1.0-draft` data and an explicit
+`opts.hia.uiLocale` of `en` or `zh-CN`. Install a compatible
+`@hia-doc/renderer-html` exposing `./site-chrome` to enable this selection.
+The source candidate uses the optional peer range `^1.0.0`. Omission retains
+the native theme path and does not load this peer.
+
+中文说明。选择导航后，主题使用共享固定顶部、栏目、真实版本及同页语言链接、目录、搜索和阅读设置。正文仍由原生JSDoc字段渲染，原生doclet ID、页映射0.1.0及呈现契约身份保持。尚无对应语言页时显示禁用语言入口。
+
+Explicit invalid navigation, missing/unsupported UI locale or unavailable
+shared entry throws before the destination is created. Error codes are
+`HIA_SITE_CHROME_INVALID`, `HIA_SITE_NAVIGATION_INVALID` and
+`HIA_SITE_CHROME_DEPENDENCY_REQUIRED`. The API remains synchronous.
+
+The selected output adds one `assets/hia-site-navigation.css`, one
+`assets/hia-site-reading.js`, a body-free `assets/hia-site-search.json` and
+`hia-site-adapter.css`. Search points at real native pages. Preferences are
+page-local and no source bytes enter the search index.
+
+Producer-approved source slots also receive script-free HTML readers under
+`sources/`, with actual locale variants and a restrictive CSP. Original text
+asset URLs and bytes remain unchanged. Known one-based range starts provide
+`#L` anchors. Missing range metadata retains a plain excerpt and an explicit
+unavailable-line state. `sourceMode: "none"` emits no source readers or assets.
+
+中文说明。源码阅读仅消费生产者已批准的片段，不额外读取源码文件。片段的行号与定位精度按原元数据及来源证据说明，原生更多语言变体沿既有路径呈现。完整官网部署及npm发行状态请分别核对实际采用与发布说明。
+
 中文摘要：唯一公开根回调为publish，数据来自JSDoc查询函数及插件已生成元数据；普通doclet可用，不把原源码读取、精度或公开授权交给模板猜测。现有布局/交互保持，机器输出测试不等同视觉验收。
 
 ## Public callback

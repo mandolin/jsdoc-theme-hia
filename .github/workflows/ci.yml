@@ -62,3 +62,55 @@ jobs:
 
       - name: Run release gate
         run: npm run release:gate
+
+  # 中文：以固定主仓代码验证可选共享子入口，普通主题发行门禁继续独立执行。
+  # English: Verify the optional shared entry against a pinned renderer owner while keeping native release gates independent.
+  site-chrome:
+    name: Shared site chrome / ${{ matrix.os }} / Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [22.23.4, 24.22.1]
+    steps:
+      - name: Check out theme
+        uses: actions/checkout@v6
+        with:
+          path: jsdoc-theme-hia
+      - name: Check out pinned plugin owner
+        uses: actions/checkout@v6
+        with:
+          repository: mandolin/jsdoc-plugin-hia-sys
+          ref: 15970dc9da0f8e120677eab7eba3e959dcf42a34
+          path: jsdoc-plugin-hia-sys
+      - name: Check out pinned shared renderer
+        uses: actions/checkout@v6
+        with:
+          repository: mandolin/HIA-Documentation
+          ref: 77e741320746c0ef742926fdcab11af4c2c6c802
+          path: main-repo
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - name: Set up existing workspace package manager
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.4
+          run_install: false
+      - name: Install frozen renderer workspace
+        working-directory: main-repo
+        run: pnpm install --frozen-lockfile
+      - name: Build shared renderer closure
+        working-directory: main-repo
+        run: node node_modules/typescript/bin/tsc -b packages/renderer-html --pretty false
+      - name: Prepare pinned theme development archive
+        run: npm run prepare:owners
+      - name: Install frozen theme dependencies
+        run: npm ci --registry=https://registry.npmjs.org/
+      - name: Exercise public callback and normal JSDoc CLI
+        env:
+          NODE_PATH: ${{ github.workspace }}/main-repo/apps/cli/node_modules
+        run: npm run test:site-navigation

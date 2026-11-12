@@ -6,7 +6,7 @@
   const i18nElement = document.getElementById("hia-i18n-data");
   const themeElement = document.getElementById("hia-theme-data");
 
-  if (!input || !dataElement) {
+  if (!dataElement) {
     return;
   }
 
@@ -87,7 +87,8 @@
     }
   }
 
-  input.addEventListener("input", update);
+  // <lang><zh-CN>公共框架提供自己的跨页检索；缺少旧过滤框时仍初始化源码阅读及字段本地化。</zh-CN><en>Shared chrome provides cross-page search; initialize source readers and field localization even without the legacy filter input.</en></lang>
+  input?.addEventListener("input", update);
 
   let themeData = {};
 

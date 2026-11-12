@@ -1,5 +1,15 @@
 # @mandolin/jsdoc-theme-hia
 
+## Host website navigation
+
+Provide `opts.hia.siteNavigation` and explicit `opts.hia.uiLocale` (`en` or
+`zh-CN`) to use the shared HIA website frame. This opt-in requires a compatible
+`@hia-doc/renderer-html` with the public `site-chrome` subpath. Ordinary JSDoc
+doclets remain supported. Native page maps, signatures, documentation fields
+and producer-approved source assets retain their original semantics.
+
+中文说明。可选导航接入统一顶部、栏目、真实版本/同页语言、目录与阅读设置，来源片段新增独立行号阅读页。省略配置保持原生输出。候选依赖的实际npm可用版本与站点部署状态分别核对。[配置、错误及输出](API.md#optional-host-navigation)
+
 ## Supported runtime
 
 Current source supports Node.js `^22.23.4 || ^24.22.1`. Release checks use

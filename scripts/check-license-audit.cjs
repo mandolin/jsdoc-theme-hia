@@ -12,6 +12,13 @@ const forbiddenLicenseFragments = ["GPL", "AGPL", "LGPL", "SSPL", "BUSL", "BSL"]
 /** @lang zh-CN 锁定实际验证的JSDoc开发版本；公开peer范围另行治理。 @lang en Pins the actually tested development JSDoc version; public peer ranges remain separate. */
 const auditRecords = [
   {
+    name: "@hia-doc/renderer-html",
+    dependencyType: "peerDependencies",
+    versionRange: "^1.0.0",
+    license: "MIT",
+    purpose: "Optional first-party shared site chrome, loaded only when host navigation is selected."
+  },
+  {
     name: "jsdoc",
     dependencyType: "peerDependencies",
     versionRange: "^4.0.0",

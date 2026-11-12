@@ -1,0 +1,37 @@
+/* <lang><zh-CN>显式站点框架下的原生JSDoc正文适配，布局由共享owner负责。</zh-CN><en>Native JSDoc prose adaptation under explicit site chrome, with layout owned by the shared renderer.</en></lang> */
+[data-hia-site-chrome] { --hia-accent:#0047ab; }
+[data-hia-site-chrome] body { --page-bg:var(--hia-bg); --panel:var(--hia-surface); --text:var(--hia-text); --text-muted:var(--hia-muted); --border:var(--hia-border); --link:var(--hia-accent); --link-hover:var(--hia-accent); --accent:var(--hia-accent); --accent-soft:var(--hia-site-soft); }
+[data-hia-site-chrome] .doclet { padding:0; margin:0 0 36px; border:0; background:transparent; box-shadow:none; min-width:0; }
+[data-hia-site-chrome] .doclet-details { display:block; border:0; }
+[data-hia-site-chrome] .doclet-summary { display:block; padding:0; background:transparent; border:0; }
+[data-hia-site-chrome] .doclet-summary-main { display:block; }
+[data-hia-site-chrome] .doclet h1 { font:700 2.35rem/1.25 Consolas,monospace; letter-spacing:-.045em; overflow-wrap:break-word; margin:16px 0 24px; }
+[data-hia-site-chrome] .doclet-summary-main > .description { margin:0 0 18px; font-size:1.05rem; color:var(--hia-muted); }
+[data-hia-site-chrome] .doclet-details > .doclet-body { display:block; padding:0; min-width:0; }
+[data-hia-site-chrome] .badges { margin:0 0 18px; }
+[data-hia-site-chrome] .badge { border-color:var(--hia-border); color:var(--hia-accent); background:var(--hia-site-soft); border-radius:20px; }
+[data-hia-site-chrome] .doc-section { border:0; border-top:1px solid var(--hia-border); padding:22px 0; margin:18px 0; border-radius:0; background:transparent; }
+[data-hia-site-chrome] .section-summary { padding:0; background:transparent; }
+[data-hia-site-chrome] .section-summary :is(h2,h3) { font-size:1.14rem; margin:0; }
+[data-hia-site-chrome] .section-body { padding:16px 0 0; }
+[data-hia-site-chrome] .table-wrap { border:1px solid var(--hia-border); border-radius:10px; overflow:auto; max-width:100%; }
+[data-hia-site-chrome] table { font-size:.9rem; border-collapse:collapse; background:var(--hia-surface); min-width:100%; }
+[data-hia-site-chrome] th { background:var(--hia-site-soft); }
+[data-hia-site-chrome] .doc-table thead th { color:var(--hia-text); background:var(--hia-site-soft); }
+[data-hia-site-chrome] td,[data-hia-site-chrome] th { border-color:var(--hia-border); padding:13px 16px; }
+[data-hia-site-chrome] .nav-group { background:transparent; margin:0 0 20px; }
+[data-hia-site-chrome] .nav-group h2 { font-size:.78rem; color:var(--hia-muted); }
+[data-hia-site-chrome] .nav-tree-root,[data-hia-site-chrome] .nav-tree-children ul { list-style:none; margin:0; padding:0 0 0 .6rem; border-left:1px solid var(--hia-border); }
+[data-hia-site-chrome] .nav-tree-root { border:0; padding:0; }
+[data-hia-site-chrome] .nav-tree-link { display:block; padding:7px 9px; border-radius:7px; overflow-wrap:break-word; }
+[data-hia-site-chrome] .nav-tree-link[aria-current] { color:var(--hia-accent); background:var(--hia-site-soft); font-weight:700; }
+[data-hia-site-chrome] .nav-tree-children summary { padding:5px 9px; overflow-wrap:break-word; }
+[data-hia-site-chrome] .hia-site-declaration { position:relative; border:1px solid var(--hia-border); border-radius:10px; background:var(--hia-surface); overflow:hidden; }
+[data-hia-site-chrome] .hia-site-code-label { margin:0; padding:9px 16px; border-bottom:1px solid var(--hia-border); color:var(--hia-muted); font-size:.75rem; }
+[data-hia-site-chrome] .hia-site-declaration .hia-signature { margin:0; border:0; border-radius:0; }
+[data-hia-site-chrome] .hia-site-declaration [data-hia-reading-copy] { position:absolute; top:6px; right:10px; }
+[data-hia-site-chrome] .hia-site-source-links { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
+[data-hia-site-chrome] .hia-site-source-links a { border:1px solid var(--hia-border); border-radius:7px; padding:7px 12px; background:var(--hia-surface); }
+[data-hia-site-chrome] .hia-site-source-boundary { color:var(--hia-muted); font-size:.83rem; }
+[data-hia-site-chrome] .hia-source-code { overflow:auto; max-width:100%; border:1px solid var(--hia-border); border-radius:10px; background:var(--hia-surface); padding:18px; font:13px/1.8 Consolas,monospace; }
+@media(max-width:800px) { [data-hia-site-chrome] .doclet h1 { font-size:1.6rem; } }

@@ -12,6 +12,7 @@ const {
   summarizeHiaMetadata
 } = require("./src/metadata-reader.cjs");
 const { buildPresentationProfile } = require("./src/presentation-profile.cjs");
+const { prepareSiteChrome, renderSourcePage } = require("./src/site-chrome.cjs");
 
 function getDoclets(data) {
   if (typeof data !== "function") {
@@ -124,12 +125,25 @@ function publish(data, opts) {
   const theme = getThemeOptions(opts);
   // <lang><zh-CN>presentationModel 是 partition/profile/source asset 的单一事实源，所有 page variant 共用。</zh-CN><en>PresentationModel is the single source of truth for partition/profile/source assets and is shared by every page variant.</en></lang>
   const presentationModel = buildPresentationProfile(doclets, getPresentationOptions(opts, theme));
+  // <lang><zh-CN>可选导航的契约、依赖与界面语言在任何写出前裁决；未选择的旧调用不加载peer。</zh-CN><en>Resolve optional navigation contract, dependency and UI locale before any write; unselected legacy calls never load the peer.</en></lang>
+  const siteChrome = prepareSiteChrome(opts, doclets, presentationModel, pageI18n);
 
   fs.mkdirSync(destination, {
     recursive: true
   });
 
   copyStatic(destination);
+  if (siteChrome) {
+    for (const asset of siteChrome.chrome.assets) writeFile(path.join(destination, asset.path), asset.contents);
+    writeFile(path.join(destination, "hia-site-adapter.css"), fs.readFileSync(path.join(__dirname, "static/hia-site-adapter.css"), "utf8"));
+    for (const source of siteChrome.sourcePages) {
+      writeFile(path.join(destination, source.file), renderSourcePage(siteChrome, source, siteChrome.uiLocale, source.file));
+      for (const locale of siteChrome.locales) {
+        const file = toLocalePageFile(source.file, locale);
+        writeFile(path.join(destination, file), renderSourcePage(siteChrome, source, locale, file));
+      }
+    }
+  }
   // <lang><zh-CN>source files 只来自 producer-approved preview body，且仅在 fetch/link profile 中存在。</zh-CN><en>Source files come only from producer-approved preview bodies and exist only in fetch/link profiles.</en></lang>
   for (const sourceFile of presentationModel.sourceAssets.files) {
     writeFile(path.join(destination, sourceFile.relativeUrl), sourceFile.content);
@@ -151,6 +165,7 @@ function publish(data, opts) {
         navigationDoclets: doclets,
         pageFile: outputPage.file,
         theme,
+        siteChrome,
         presentationModel
       })
     );
@@ -165,6 +180,7 @@ function publish(data, opts) {
             pageFile: outputPage.file,
             locale,
             theme,
+            siteChrome,
             presentationModel
           })
         );

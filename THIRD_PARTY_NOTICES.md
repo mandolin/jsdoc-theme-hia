@@ -6,6 +6,10 @@ This theme has no bundled runtime dependency besides Node.js built-ins and brows
 
 ## Peer Dependencies
 
+- `@hia-doc/renderer-html` `^1.0.0` (`MIT`), optional first-party peer for explicitly selected host navigation. Its existing runtime dependency closure applies when installed.
+
+中文说明。此第一方可选peer仅在显式选择站点导航时加载，用于共享导航与阅读框架；候选版本和实际npm发行分别核对。
+
 - `jsdoc` `^4.0.0` (`Apache-2.0`)
 
 `jsdoc` is expected to be installed by the consuming project or used through this package's development environment.
