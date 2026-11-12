@@ -822,7 +822,9 @@ function renderLocalizedDescription(doclet, pageI18n, renderOptions = {}) {
   const i18n = getDocletI18n(doclet);
 
   if (!i18n || !pageI18n.enabled) {
-    return renderDescription(doclet.description || doclet.classdesc);
+    // <lang><zh-CN>未声明语言的原正文不继承宿主界面语言；普通原生路径保留其既有输出。</zh-CN><en>Unlabelled prose does not inherit host UI language; ordinary native output retains its existing shape.</en></lang>
+    const description = renderDescription(doclet.description || doclet.classdesc);
+    return renderOptions.siteChrome ? description.replace('<div class="description"', '<div class="description" lang=""') : description;
   }
 
   if (renderOptions.locale) {
@@ -837,7 +839,7 @@ function renderLocalizedDescription(doclet, pageI18n, renderOptions = {}) {
     }
 
     return [
-      `<div class="description i18n-description" data-hia-i18n="single" data-hia-locale="${escapeHtml(renderOptions.locale)}"${fallback}>`,
+      `<div class="description i18n-description" data-hia-i18n="single" data-hia-locale="${escapeHtml(renderOptions.locale)}"${renderOptions.siteChrome ? ` lang="${escapeHtml(localized.resolvedLocale || "")}"` : ""}${fallback}>`,
       renderMarkdownish(text),
       "</div>"
     ].join("\n");
@@ -894,7 +896,9 @@ function renderLocalizedField(doclet, fieldPath, defaultText, pageI18n, renderOp
   const className = options.className || "i18n-field";
 
   if (!i18n || !pageI18n.enabled) {
-    return renderer(defaultText || "") || empty;
+    // <lang><zh-CN>自然语言字段缺少声明时保留未知语言，界面消息继续由外层显式语言承载。</zh-CN><en>Fields without language declarations remain unknown while outer UI messages retain their explicit locale.</en></lang>
+    const body = renderer(defaultText || "") || empty;
+    return renderOptions.siteChrome && body ? `<${tag} class="${escapeHtml(className)}" lang="">${body}</${tag}>` : body;
   }
 
   const renderOne = (locale, hidden) => {
@@ -912,7 +916,7 @@ function renderLocalizedField(doclet, fieldPath, defaultText, pageI18n, renderOp
       return "";
     }
 
-    return `<${tag} class="${escapeHtml(className)}" data-hia-locale="${escapeHtml(locale)}"${fallback}${hiddenAttr}>${renderer(text)}</${tag}>`;
+    return `<${tag} class="${escapeHtml(className)}" data-hia-locale="${escapeHtml(locale)}"${renderOptions.siteChrome ? ` lang="${escapeHtml(localized.resolvedLocale || "")}"` : ""}${fallback}${hiddenAttr}>${renderer(text)}</${tag}>`;
   };
 
   if (renderOptions.locale) {

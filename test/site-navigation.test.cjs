@@ -97,3 +97,13 @@ test("normal JSDoc CLI selects shared chrome without disclosing plain input file
   assert.ok(html.includes("No public source link or preview is available"));
   assert.equal(fs.existsSync(path.join(output, "sources")), false);
 }));
+
+test("plain content keeps an unknown language independently of the selected Chinese UI", () => fixture(directory => {
+  const doclet = { kind: "function", name: "plain", longname: "plain", description: "Unlabelled prose.", params: [{ name: "name", description: "Unlabelled parameter." }] };
+  publish(() => ({ get: () => [doclet] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "zh-CN" } });
+  const file = fs.readdirSync(directory).find(name => name.startsWith("plain-") && name.endsWith(".html"));
+  const html = fs.readFileSync(path.join(directory, file), "utf8");
+  assert.ok(html.includes('<html lang="zh-CN"'));
+  assert.ok(html.includes('class="description" lang=""'));
+  assert.ok(html.includes('class="i18n-field" lang=""'));
+}));
