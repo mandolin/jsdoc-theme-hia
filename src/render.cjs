@@ -1830,7 +1830,8 @@ function renderPage(options) {
     labels
   });
   const htmlLang = renderOptions.locale || pageI18n.defaultLocale || "en";
-  const symbolCountLabel = formatUiLabel(labels, "summary.symbols", { count: doclets.length });
+  // <lang><zh-CN>共享多页首页显示真实站点数量，具体条目页仍显示本页数量。</zh-CN><en>The shared multipage home reports the actual site count, while entry pages retain their page-local count.</en></lang>
+  const symbolCountLabel = formatUiLabel(labels, "summary.symbols", { count: siteChrome && !doclets.length ? navigationDoclets.length : doclets.length });
   const skinName = renderOptions.theme.skin.name;
   const codeWrapClass = renderOptions.theme.code.wrap ? " hia-code-wrap" : "";
   const codeStyle = renderCodeStyle(renderOptions.theme.code);

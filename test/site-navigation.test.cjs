@@ -48,6 +48,7 @@ test("plain JSDoc supports explicitly selected chrome with one asset set and pre
   assert.ok(html.includes("User name."));
   assert.ok(html.includes("greet(name) -&gt; string"));
   assert.ok(html.includes('aria-disabled="true"'));
+  assert.ok(fs.readFileSync(path.join(directory, "index.html"), "utf8").includes("1 symbols"));
   const map = JSON.parse(fs.readFileSync(path.join(directory, "hia-page-map.json")));
   assert.equal(map.contractVersion, "0.1.0");
   assert.equal(map.pages[0].file, page);
