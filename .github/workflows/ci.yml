@@ -88,7 +88,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: mandolin/HIA-Documentation
-          ref: 77e741320746c0ef742926fdcab11af4c2c6c802
+          ref: 3676ea3b3fd37d8d80b74d33fb2e77f7f15b9494
           path: main-repo
       - name: Set up Node.js
         uses: actions/setup-node@v6

@@ -86,12 +86,12 @@ test("source readers retain producer range, escape bodies and honor explicit non
 test("normal JSDoc CLI selects shared chrome without disclosing plain input files as source", () => fixture(directory => {
   // <lang><zh-CN>无HIA插件的真实解析输入只有文档字段；解析权限不等于公开源码许可。</zh-CN><en>Real parsing without an HIA plugin supplies documentation fields only; parse access is not source-publication permission.</en></lang>
   const input = path.join(directory, "api.js");
-  fs.writeFileSync(input, '/**\n * Returns a greeting.\n * @lang zh-CN 返回问候。\n * @lang en Returns a greeting.\n * @param {string} name Display name.\n * @returns {string} Greeting.\n */\nfunction greet(name) { return name; }\n');
+  fs.writeFileSync(input, '/** @module public-demo */\n/**\n * Returns a greeting.\n * @lang zh-CN 返回问候。\n * @lang en Returns a greeting.\n * @param {string} name Display name.\n * @returns {string} Greeting.\n */\nfunction greet(name) { return name; }\n');
   const output = path.join(directory, "rendered");
   const config = path.join(directory, "jsdoc.json");
   fs.writeFileSync(config, JSON.stringify({ source: { include: [input] }, opts: { template: path.resolve(__dirname, ".."), destination: output, hia: { siteNavigation: navigation(), uiLocale: "en" } } }));
   execFileSync(process.execPath, [path.resolve(__dirname, "../node_modules/jsdoc/jsdoc.js"), "-c", config], { cwd: directory, stdio: "pipe" });
-  const page = fs.readdirSync(output).find(file => file.startsWith("greet-") && file.endsWith(".html"));
+  const page = JSON.parse(fs.readFileSync(path.join(output, "hia-page-map.json"), "utf8")).pages[0].file;
   const html = fs.readFileSync(path.join(output, page), "utf8");
   assert.ok(html.includes("data-hia-site-chrome") && html.includes("Display name."));
   assert.ok(html.includes("No public source link or preview is available"));
