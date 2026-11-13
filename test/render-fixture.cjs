@@ -817,6 +817,13 @@ assert.match(codeOptionsHtml, /--code-line-height: 1.7/);
 assert.match(codeOptionsHtml, /--code-tab-size: 4/);
 assert.match(codeOptionsHtml, /"fontFamily":"mono"/);
 assert.match(themeCss, /\.code-block\s*\{[\s\S]*?min-width:\s*0;/);
+// <lang><zh-CN>显式零下限轨道让details及正文网格按视口收缩，把参数表的横滚交回内部容器。</zh-CN><en>Explicit zero-minimum tracks let details and body grids shrink to the viewport, returning parameter-table scrolling to its inner container.</en></lang>
+for (const selector of ["doclet-details", "doclet-body"]) {
+  // <lang><zh-CN>只取对应规则体，避免后续其它选择器掩盖回归。</zh-CN><en>Read only the matching rule body so later unrelated selectors cannot conceal a regression.</en></lang>
+  const rule = themeCss.match(new RegExp("\\." + selector + "\\s*\\{([^}]+)\\}"));
+  assert.ok(rule, selector + " rule is required.");
+  assert.match(rule[1], /grid-template-columns:\s*minmax\(0,\s*1fr\);/);
+}
 assert.match(themeCss, /\.doclet\s*\{[\s\S]*?overflow-x:\s*clip;/);
 assert.match(themeCss, /\.nav-tree-root,[\s\S]*?list-style:\s*none;/);
 assert.match(themeCss, /\.theme-controls/);

@@ -463,14 +463,16 @@ summary:focus-visible,
   padding: 18px;
   min-width: 0;
   /*
-   * 源码块和参数表各自管理横向滚动。这里阻止它们的长内容把整页扩宽，
-   * 同时保留子元素的滚动能力，避免窄屏阅读时出现页面级横向滚动。
+   * <lang><zh-CN>源码块和参数表各自管理横向滚动；内部网格收缩后，外层裁切只限制整页宽度。</zh-CN>
+   * <en>Source blocks and parameter tables manage their own horizontal scrolling. Once inner grids shrink, outer clipping only bounds the page width.</en></lang>
    */
   overflow-x: clip;
 }
 
 .doclet-details {
   display: grid;
+  /* <lang><zh-CN>零下限防止参数表的最小内容宽度撑大details内部轨道。</zh-CN><en>A zero minimum prevents the table's min-content width from enlarging the internal details track.</en></lang> */
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -541,6 +543,8 @@ details[open] > .collapse-summary::after {
 
 .doclet-body {
   display: grid;
+  /* <lang><zh-CN>把宽表约束在section内，确保table-wrap真正拥有可滚动的较窄视口。</zh-CN><en>Constrain wide tables within their sections so table-wrap actually has a narrower scrolling viewport.</en></lang> */
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
 

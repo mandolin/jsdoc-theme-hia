@@ -153,6 +153,9 @@ The theme writes the following files to the configured destination:
 
 ## Navigation and Deep Links
 
+Wide parameter tables scroll within their own container on narrow screens.
+中文说明。窄屏可在参数表内部横向滚动读取完整列，正文网格按可用宽度收缩。
+
 The sidebar uses stable, collision-resistant fragment identities derived from
 the JSDoc kind and longname. The readable prefix is followed by a deterministic
 hash suffix. When

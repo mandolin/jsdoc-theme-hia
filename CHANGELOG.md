@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — Narrow parameter tables
+
+- 中文：文档details和正文网格使用零下限列，修复窄屏参数表被外层裁切后无法横滚读取说明的问题。
+- English: Use zero-minimum columns in doclet details and body grids, restoring local horizontal scrolling for parameter descriptions clipped on narrow screens.
+
 ## Unreleased — Shared host navigation
 
 - 中文：以可选renderer-html peer同步接入正式site-chrome子入口，增加显式站点/界面语言、固定顶部、实际同页切换、公共检索与设置；保留原生字段、身份与page-map版本。
