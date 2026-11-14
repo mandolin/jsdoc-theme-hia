@@ -41,19 +41,25 @@ function host(terminal) {
   // <lang><zh-CN>固定公开字节与摘要使成功/空响应经过真实完整性分支，错误响应按原状态集合处理。</zh-CN><en>Fixed public bytes and digests exercise actual success/empty integrity branches while error responses retain the original states.</en></lang>
   const bytes = Buffer.from(terminal === "empty" ? "" : "export const value = 1;");
   const attributes = new Map(Object.entries({ "data-hia-source-url": "source.txt", "data-hia-source-integrity": "sha256-" + createHash("sha256").update(terminal === "integrity-error" ? "other" : bytes).digest("base64"), "data-hia-source-max-bytes": "10000", "data-hia-source-max-lines": "100", "data-hia-source-timeout-ms": "1000" }));
-  const reader = { querySelector: selector => ({ "[data-hia-source-load]": load, "[data-hia-source-reset]": reset, "[data-hia-source-status]": status, "[data-hia-source-output]": output })[selector], getAttribute: key => attributes.get(key), setAttribute: (key, value) => attributes.set(key, value) };
+  const reader = { hidden: true, querySelector: selector => ({ "[data-hia-source-load]": load, "[data-hia-source-reset]": reset, "[data-hia-source-status]": status, "[data-hia-source-output]": output })[selector], getAttribute: key => attributes.get(key), setAttribute: (key, value) => attributes.set(key, value) };
   let complete;
   let requestCount = 0;
   const response = new Promise(resolve => { complete = resolve; });
   const window = { fetch() { requestCount++; return response; }, crypto: webcrypto, setTimeout, clearTimeout, btoa: value => Buffer.from(value, "binary").toString("base64") };
   runInNewContext("(" + script.slice(start, end) + ")", { document, window, themeData: {}, AbortController, TextDecoder, Uint8Array })();
-  return { document, load, reset, status, container, attributes, requests: () => requestCount,
+  return { document, reader, load, reset, status, container, attributes, requests: () => requestCount,
     finish() {
       if (terminal === "aborted") complete(Promise.reject(Object.assign(new Error("test abort"), { name: "AbortError" })));
       else complete({ status: { denied: 403, "not-found": 404, "network-error": 503 }[terminal] || 200, ok: !["denied", "not-found", "network-error"].includes(terminal), arrayBuffer: async () => Uint8Array.from(bytes).buffer });
     }
   };
 }
+
+test("source controls become available only after binding without requesting source", () => {
+  const state = host("ready");
+  assert.equal(state.reader.hidden, false);
+  assert.equal(state.requests(), 0);
+});
 
 for (const terminal of ["ready", "empty", "denied", "not-found", "integrity-error", "network-error", "aborted"]) {
   test("source reader preserves initiating focus through loading, " + terminal + " and reset", async () => {

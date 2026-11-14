@@ -1391,7 +1391,8 @@ function renderSourceReader(sourceEntry, labels) {
   // <lang><zh-CN>integrity 字符串采用 SRI 形态，浏览器 runtime 将算法和值分开校验。</zh-CN><en>The integrity string uses SRI form; browser runtime validates its algorithm and value separately.</en></lang>
   const integrity = `${sourceEntry.digest.algorithm}-${sourceEntry.digest.value}`;
   return [
-    `  <div class="source-reader" data-hia-source-reader data-hia-source-state="idle" data-hia-source-url="${escapeHtml(sourceEntry.relativeUrl)}" data-hia-source-integrity="${escapeHtml(integrity)}" data-hia-source-max-bytes="262144" data-hia-source-max-lines="800" data-hia-source-timeout-ms="8000">`,
+    // <lang><zh-CN>动态请求控件由运行时绑定后展示，禁脚本阅读使用外层普通源码链接。</zh-CN><en>Reveal dynamic request controls after runtime binding; script-free reading uses the surrounding ordinary source links.</en></lang>
+    `  <div class="source-reader" hidden data-hia-source-reader data-hia-source-state="idle" data-hia-source-url="${escapeHtml(sourceEntry.relativeUrl)}" data-hia-source-integrity="${escapeHtml(integrity)}" data-hia-source-max-bytes="262144" data-hia-source-max-lines="800" data-hia-source-timeout-ms="8000">`,
     `    <div class="source-reader-actions"><button type="button" data-hia-source-load ${renderLabelAttributes("source.load")}>${escapeHtml(formatUiLabel(labels, "source.load"))}</button><button type="button" data-hia-source-reset hidden ${renderLabelAttributes("source.reset")}>${escapeHtml(formatUiLabel(labels, "source.reset"))}</button></div>`,
     `    <p class="source-reader-status" aria-live="polite" data-hia-source-status ${renderLabelAttributes("source.state.idle")}>${escapeHtml(formatUiLabel(labels, "source.state.idle"))}</p>`,
     `    <pre class="source-reader-output" hidden><code data-hia-source-output data-language="${escapeHtml(sourceEntry.language || "javascript")}"></code></pre>`,
@@ -1845,8 +1846,8 @@ function renderPage(options) {
     body = body.replace(/<details class="([^"]*collapsible-section)"([^>]*)>(\s*<summary[^>]*><h[23][^>]*>([\s\S]*?)<\/h[23]>)/gu, (match, classes, attributes, heading, label) => {
       const id = `hia-native-section-${sections.length + 1}`;
       sections.push({ id, label: stripHtml(label) });
-      // <lang><zh-CN>页内目录可将焦点移到真实小节，负tabindex保留原生summary的顺序键盘入口。</zh-CN><en>Let the outline focus its actual section while negative tabindex preserves native summary order.</en></lang>
-      return `<details id="${id}" tabindex="-1" data-hia-reading-section="native" class="${classes}"${attributes}>${heading}`;
+      // <lang><zh-CN>details保留稳定锚点且不设tabindex，避免浏览器排除其内部控件；共享目录聚焦原生summary入口。</zh-CN><en>Keep the stable details anchor without tabindex so browsers retain its controls in sequential navigation; shared outlines focus the native summary entrance.</en></lang>
+      return `<details id="${id}" data-hia-reading-section="native" class="${classes}"${attributes}>${heading}`;
     });
     // <lang><zh-CN>窄屏长行/表格的局部滚动区域可由键盘聚焦，正文与原生table语义保持。</zh-CN><en>Local overflow areas for narrow-screen long lines/tables are keyboard-focusable while retaining prose and native table semantics.</en></lang>
     body = body.replace(/<pre\b/gu, '<pre tabindex="0"');

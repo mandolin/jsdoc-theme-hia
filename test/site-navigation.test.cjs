@@ -79,15 +79,17 @@ test("shared parameter tables retain native width and complete identifier words 
   assert.ok(html.includes("profile") && html.includes("DocumentationPresentationProfile") && html.includes("Public rendering configuration with a complete description."));
 }));
 
-test("shared native outline sections are explicit focus targets outside sequential Tab order", () => fixture(directory => {
+test("shared native outline anchors focus summaries without excluding their controls from Tab order", () => fixture(directory => {
   // <lang><zh-CN>正常publish生成的真实小节必须接收目录脚本的focus，顺序Tab仍由原生summary承担。</zh-CN><en>Real sections from normal publish must receive outline focus while native summaries retain sequential Tab navigation.</en></lang>
   const doclet = { kind: "function", name: "focused", longname: "focused", params: [{ name: "value", description: "Public value." }], returns: [{ description: "Public result." }] };
   publish(() => ({ get: () => [doclet] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "en" } });
   const page = fs.readdirSync(directory).find(file => file.startsWith("focused-") && file.endsWith(".html"));
   const html = fs.readFileSync(path.join(directory, page), "utf8");
-  const sections = [...html.matchAll(/<details\b[^>]*data-hia-reading-section="native"[^>]*>/gu)];
+  const sections = [...html.matchAll(/<details\b[^>]*data-hia-reading-section="native"[^>]*>\s*<summary\b[^>]*>/gu)];
   assert.ok(sections.length >= 2);
-  assert.ok(sections.every(section => section[0].includes('tabindex="-1"')));
+  // <lang><zh-CN>负tabindex的details会在真实浏览器中排除内部控件；锚点保持且原生summary继续承担顺序焦点入口。</zh-CN><en>Negative-tabindex details exclude their controls in real browsers; retain anchors and native summaries as sequential focus entrances.</en></lang>
+  assert.ok(sections.every(section => /<details id="hia-native-section-\d+"/u.test(section[0])));
+  assert.ok(sections.every(section => !/<details[^>]*tabindex/u.test(section[0])));
 }));
 
 test("shared native prose and signatures use the active site's semantic foregrounds", () => fixture(directory => {
@@ -146,6 +148,9 @@ test("source readers retain producer range, escape bodies and honor explicit non
   assert.equal(html.includes("<script"), false);
   const text = fs.readdirSync(path.join(output, "sources")).find(file => file.endsWith(".txt"));
   assert.equal(fs.readFileSync(path.join(output, "sources", text), "utf8"), content);
+  // <lang><zh-CN>动态读取器在运行时绑定前隐藏，静态源码链接承担禁脚本阅读。</zh-CN><en>Hide the dynamic reader before runtime binding, leaving static source links for script-free reading.</en></lang>
+  const entry = JSON.parse(fs.readFileSync(path.join(output, "hia-page-map.json"), "utf8")).pages[0].file;
+  assert.match(fs.readFileSync(path.join(output, entry), "utf8"), /<div class="source-reader" hidden data-hia-source-reader/u);
   const hidden = path.join(directory, "none");
   publish(data, { destination: hidden, hia: { siteNavigation: navigation(), uiLocale: "en", presentation: { sourceMode: "none" } } });
   assert.equal(fs.existsSync(path.join(hidden, "sources")), false);

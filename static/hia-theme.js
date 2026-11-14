@@ -501,12 +501,13 @@
           window.clearTimeout(timeoutId);
         }
       });
-
       resetButton.addEventListener("click", () => {
         if (transition("idle")) {
           outputElement.textContent = "";
         }
       });
+      // <lang><zh-CN>全部处理器就绪后才开放动态控件，初始化本身不请求源码。</zh-CN><en>Expose dynamic controls only after all handlers are ready; initialization itself never requests source.</en></lang>
+      reader.hidden = false;
     }
   }
 

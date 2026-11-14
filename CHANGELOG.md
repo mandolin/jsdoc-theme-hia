@@ -6,6 +6,8 @@
 - English: Shared outlines focus their actual sections while native summaries retain sequential keyboard access.
 - 中文：源码加载期间保留发起按钮并标记暂不可用，终态与重置在原控件间交接焦点，尊重加载期间用户已移走的焦点。
 - English: Keep the initiating source button temporarily unavailable during loading, transfer focus between existing terminal/reset controls and respect focus moved by the user while loading.
+- 中文：动态源码读取控件在运行时绑定后显示，禁脚本模式通过普通静态源码链接阅读。
+- English: Reveal dynamic source controls after runtime binding, using ordinary static source links for script-free reading.
 
 ## Unreleased — Shared appearance and printing
 
