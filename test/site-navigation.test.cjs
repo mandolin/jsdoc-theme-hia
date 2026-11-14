@@ -79,6 +79,33 @@ test("shared parameter tables retain native width and complete identifier words 
   assert.ok(html.includes("profile") && html.includes("DocumentationPresentationProfile") && html.includes("Public rendering configuration with a complete description."));
 }));
 
+test("shared native prose and signatures use the active site's semantic foregrounds", () => fixture(directory => {
+  // <lang><zh-CN>实际publish输出仍含原生签名和说明，适配器负责它们在当前站点表面上的前景色。</zh-CN><en>Actual publish retains native signatures and prose, with the adapter owning their foregrounds on the active site surface.</en></lang>
+  const doclet = { kind: "function", name: "readable", longname: "readable", description: "Readable public description.", params: [{ name: "value", description: "Public value." }], returns: [{ description: "Readable result." }] };
+  publish(() => ({ get: () => [doclet] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "en" } });
+  // <lang><zh-CN>校验真正写出的覆盖规则，防止原生浅色常量穿透共享深色变量。</zh-CN><en>Check emitted overrides so native light-only constants cannot bypass shared dark-scheme variables.</en></lang>
+  const adapter = fs.readFileSync(path.join(directory, "hia-site-adapter.css"), "utf8");
+  assert.match(adapter, /\[data-hia-site-chrome\] \.signature\s*\{[^}]*color:\s*var\(--hia-text\)/u);
+  assert.match(adapter, /\[data-hia-site-chrome\] \.doc-section h3[^}]*color:\s*var\(--hia-text\)/u);
+  assert.match(adapter, /\[data-hia-site-chrome\] \.description[^}]*color:\s*var\(--hia-text\)/u);
+  assert.match(adapter, /\[data-hia-site-chrome\] \.meta-list dt[^}]*color:\s*var\(--hia-muted\)/u);
+  assert.match(adapter, /\[data-hia-site-chrome\] \.source-reference\s*\{[^}]*background:\s*var\(--hia-surface\)/u);
+}));
+
+test("shared print media supplies a complete light paper palette and wrapping code without changing screen settings", () => fixture(directory => {
+  publish(() => ({ get: () => [] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "en" } });
+  // <lang><zh-CN>打印只进入媒体覆盖，不依赖脚本把用户选择强改成浅色；每个深色变量都须在纸面有对应值。</zh-CN><en>Printing uses media overrides rather than scripts forcing the user's screen choice to light; every dark variable needs a paper counterpart.</en></lang>
+  const adapter = fs.readFileSync(path.join(directory, "hia-site-adapter.css"), "utf8");
+  const print = adapter.split("@media print")[1];
+  assert.ok(print, "Shared native output needs an explicit print palette.");
+  const body = print.match(/\[data-hia-site-chrome\] body\s*\{([^}]+)\}/u)?.[1] ?? "";
+  for (const [token, value] of Object.entries({ "hia-bg": "#fff", "hia-surface": "#fff", "hia-text": "#17253a", "hia-muted": "#526177", "hia-border": "#dce4ef", "hia-site-soft": "#edf3ff", "hia-accent": "#0047ab", "code-bg": "#fff", "code-line": "#17253a" })) {
+    assert.ok(body.includes(`--${token}:${value};`), `Missing paper token ${token}`);
+  }
+  assert.match(body, /color-scheme:\s*light/u);
+  assert.match(print, /\.signature code[^}]*white-space:\s*pre-wrap/u);
+}));
+
 test("invalid navigation or missing UI locale fails before creating the output", () => fixture(directory => {
   for (const hia of [{ siteNavigation: navigation() }, { siteNavigation: { ...navigation(), contractVersion: "private-invalid" }, uiLocale: "en" }]) {
     const output = path.join(directory, "out");

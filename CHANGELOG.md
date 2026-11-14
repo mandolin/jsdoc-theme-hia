@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Shared appearance and printing
+
+- 中文：共享导航的签名、标题、说明、示例/元数据标签和来源状态采用站点语义颜色，改善深色与系统外观下的对比度。
+- English: Use site-semantic colors for shared-navigation signatures, headings, prose, example/metadata labels and source status surfaces in dark and system appearance.
+- 中文：打印采用浅色纸面及代码前景/背景，长代码换行，退出打印后恢复屏幕外观。
+- English: Use a light paper/code palette with wrapping code lines during printing and restore screen appearance afterward.
+
 ## Unreleased — Narrow parameter tables
 
 - 中文：共享导航保留原生参数表与简表最小宽度，名称和类型按正常词边界排版，修复窄屏逐字碎裂，继续支持表内横滚、键盘及无脚本阅读。

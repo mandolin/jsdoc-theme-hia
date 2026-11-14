@@ -13,6 +13,14 @@
 [data-hia-site-chrome] .doc-section { border:0; border-top:1px solid var(--hia-border); padding:22px 0; margin:18px 0; border-radius:0; background:transparent; }
 [data-hia-site-chrome] .section-summary { padding:0; background:transparent; }
 [data-hia-site-chrome] .section-summary :is(h2,h3) { font-size:1.14rem; margin:0; }
+/* <lang><zh-CN>原生浅色常量在共享主题下改用语义前景，跟随明暗和系统外观。</zh-CN><en>Replace native light-only constants with semantic foregrounds under shared chrome, following explicit and system appearance.</en></lang> */
+[data-hia-site-chrome] .doc-section h3, [data-hia-site-chrome] .description { color:var(--hia-text); }
+[data-hia-site-chrome] .example-block figcaption, [data-hia-site-chrome] .source-caption, [data-hia-site-chrome] .meta-list dt { color:var(--hia-muted); }
+[data-hia-site-chrome] .signature { color:var(--hia-text); background:var(--hia-surface); border-color:var(--hia-border); }
+/* <lang><zh-CN>来源状态与链接的前景和表面成对采用同一调色板；未解析提示沿原警告配色。</zh-CN><en>Pair source-status and link foregrounds with surfaces from the same palette, retaining native warning colors for unresolved references.</en></lang> */
+[data-hia-site-chrome] .source-reference { background:var(--hia-surface); }
+[data-hia-site-chrome] .source-reference.unresolved { background:var(--warn-soft); color:var(--warn); }
+[data-hia-site-chrome] .source-links a, [data-hia-site-chrome] .source-links span { background:var(--hia-surface); }
 [data-hia-site-chrome] .section-body { padding:16px 0 0; }
 [data-hia-site-chrome] .table-wrap { border:1px solid var(--hia-border); border-radius:10px; overflow:auto; max-width:100%; }
 /* <lang><zh-CN>保留原生参数表和简表的最小宽度，窄屏横滚由table-wrap承载，避免四列压缩成碎词。</zh-CN><en>Retain native minimum widths for parameter and compact tables, letting table-wrap scroll on narrow screens without crushing four columns into word fragments.</en></lang> */
@@ -38,3 +46,23 @@
 [data-hia-site-chrome] .hia-site-source-boundary { color:var(--hia-muted); font-size:.83rem; }
 [data-hia-site-chrome] .hia-source-code { overflow:auto; max-width:100%; border:1px solid var(--hia-border); border-radius:10px; background:var(--hia-surface); padding:18px; font:13px/1.8 Consolas,monospace; }
 @media(max-width:800px) { [data-hia-site-chrome] .doclet h1 { font-size:1.6rem; } }
+@media print {
+  /* <lang><zh-CN>纸面变量在正文作用域覆盖继承的深色值，媒体退出后由原屏幕设置恢复。</zh-CN><en>Paper variables override inherited dark values within the body, restoring the existing screen appearance when print media ends.</en></lang> */
+  [data-hia-site-chrome] body {
+    --hia-bg:#fff;
+    --hia-surface:#fff;
+    --hia-text:#17253a;
+    --hia-muted:#526177;
+    --hia-border:#dce4ef;
+    --hia-site-soft:#edf3ff;
+    --hia-accent:#0047ab;
+    --code-bg:#fff;
+    --code-line:#17253a;
+    color-scheme:light;
+  }
+  /* <lang><zh-CN>页面画布与代码采用浅色纸面，长行在块内换行以适配打印可用宽度。</zh-CN><en>Use a light paper canvas and code palette, wrapping long lines within the available print width.</en></lang> */
+  [data-hia-site-chrome] { background:#fff; }
+  [data-hia-site-chrome] .signature, [data-hia-site-chrome] .code-block, [data-hia-site-chrome] .source-reader-output, [data-hia-site-chrome] .hia-source-code { overflow:visible; max-height:none; }
+  [data-hia-site-chrome] .signature code, [data-hia-site-chrome] .code-block code, [data-hia-site-chrome] .code-line, [data-hia-site-chrome] .hia-source-code-line { min-width:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+  [data-hia-site-chrome] .code-line[data-line]::before { color:var(--hia-muted); }
+}
