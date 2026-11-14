@@ -2,6 +2,8 @@
 
 ## Unreleased — Narrow parameter tables
 
+- 中文：共享导航保留原生参数表与简表最小宽度，名称和类型按正常词边界排版，修复窄屏逐字碎裂，继续支持表内横滚、键盘及无脚本阅读。
+- English: Preserve native parameter and compact-table minimum widths under shared navigation, using normal word boundaries for names and types and retaining local scrolling, keyboard access and script-free reading.
 - 中文：文档details和正文网格使用零下限列，修复窄屏参数表被外层裁切后无法横滚读取说明的问题。
 - English: Use zero-minimum columns in doclet details and body grids, restoring local horizontal scrolling for parameter descriptions clipped on narrow screens.
 

@@ -15,7 +15,10 @@
 [data-hia-site-chrome] .section-summary :is(h2,h3) { font-size:1.14rem; margin:0; }
 [data-hia-site-chrome] .section-body { padding:16px 0 0; }
 [data-hia-site-chrome] .table-wrap { border:1px solid var(--hia-border); border-radius:10px; overflow:auto; max-width:100%; }
-[data-hia-site-chrome] table { font-size:.9rem; border-collapse:collapse; background:var(--hia-surface); min-width:100%; }
+/* <lang><zh-CN>保留原生参数表和简表的最小宽度，窄屏横滚由table-wrap承载，避免四列压缩成碎词。</zh-CN><en>Retain native minimum widths for parameter and compact tables, letting table-wrap scroll on narrow screens without crushing four columns into word fragments.</en></lang> */
+[data-hia-site-chrome] table { font-size:.9rem; border-collapse:collapse; background:var(--hia-surface); }
+/* <lang><zh-CN>标识符按正常词边界参与表格最小内容宽度计算，说明文字继续按原生段落规则换行。</zh-CN><en>Identifiers contribute normal word boundaries to table min-content sizing while prose retains native paragraph wrapping.</en></lang> */
+[data-hia-site-chrome] .doc-table code { overflow-wrap:normal; word-break:normal; }
 [data-hia-site-chrome] th { background:var(--hia-site-soft); }
 [data-hia-site-chrome] .doc-table thead th { color:var(--hia-text); background:var(--hia-site-soft); }
 [data-hia-site-chrome] td,[data-hia-site-chrome] th { border-color:var(--hia-border); padding:13px 16px; }

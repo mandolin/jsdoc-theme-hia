@@ -61,6 +61,24 @@ test("plain JSDoc supports explicitly selected chrome with one asset set and pre
   assert.deepEqual(fs.readdirSync(path.join(directory, "assets")).sort(), ["hia-site-navigation.css", "hia-site-reading.js", "hia-site-search.json"]);
 }));
 
+test("shared parameter tables retain native width and complete identifier words inside their scroll region", () => fixture(directory => {
+  // <lang><zh-CN>四列数据同时覆盖短名称、长类型和可换行说明，原生字段及可访问滚动区域由正常publish产生。</zh-CN><en>Four-column data covers short names, long types and wrapping prose, with native fields and the accessible scroll region produced by normal publish.</en></lang>
+  const doclet = {
+    kind: "function", name: "configure", longname: "configure", description: "Configures a renderer.",
+    params: [{ name: "profile", type: { names: ["DocumentationPresentationProfile"] }, optional: true, description: "Public rendering configuration with a complete description." }]
+  };
+  publish(() => ({ get: () => [doclet] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "en" } });
+  // <lang><zh-CN>只检查实际写出的站点适配器，防止更高特异性把原生最小表宽覆盖为视口宽度。</zh-CN><en>Inspect the emitted site adapter so higher specificity cannot replace native minimum table widths with the viewport width.</en></lang>
+  const adapter = fs.readFileSync(path.join(directory, "hia-site-adapter.css"), "utf8");
+  assert.doesNotMatch(adapter.match(/\[data-hia-site-chrome\] table\s*\{[^}]*\}/u)?.[0] ?? "", /min-width\s*:/u);
+  assert.match(adapter, /\[data-hia-site-chrome\] \.doc-table code\s*\{[^}]*overflow-wrap:\s*normal\s*;[^}]*word-break:\s*normal/u);
+  // <lang><zh-CN>恢复正常断词不能丢弃可选列、说明或原有键盘访问，页面仍使用真实原生身份。</zh-CN><en>Normal word breaking must retain the optional column, prose and keyboard access, with the page keeping its native identity.</en></lang>
+  const page = fs.readdirSync(directory).find(file => file.startsWith("configure-") && file.endsWith(".html"));
+  const html = fs.readFileSync(path.join(directory, page), "utf8");
+  assert.match(html, /class="table-wrap" tabindex="0" role="region" aria-label="[^"]+"/u);
+  assert.ok(html.includes("profile") && html.includes("DocumentationPresentationProfile") && html.includes("Public rendering configuration with a complete description."));
+}));
+
 test("invalid navigation or missing UI locale fails before creating the output", () => fixture(directory => {
   for (const hia of [{ siteNavigation: navigation() }, { siteNavigation: { ...navigation(), contractVersion: "private-invalid" }, uiLocale: "en" }]) {
     const output = path.join(directory, "out");

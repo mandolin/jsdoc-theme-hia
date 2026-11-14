@@ -154,6 +154,10 @@ The theme writes the following files to the configured destination:
 ## Navigation and Deep Links
 
 Wide parameter tables scroll within their own container on narrow screens.
+When shared host navigation is enabled, tables retain their native minimum widths.
+Parameter names and types use normal word boundaries, and descriptions wrap within
+their cells. The named table region can be focused and scrolled with the keyboard,
+including when JavaScript is disabled.
 中文说明。窄屏可在参数表内部横向滚动读取完整列，正文网格按可用宽度收缩。
 
 The sidebar uses stable, collision-resistant fragment identities derived from
