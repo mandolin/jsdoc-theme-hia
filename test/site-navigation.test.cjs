@@ -91,6 +91,7 @@ test("shared native prose and signatures use the active site's semantic foregrou
   assert.match(adapter, /\[data-hia-site-chrome\] \.meta-list dt[^}]*color:\s*var\(--hia-muted\)/u);
   assert.match(adapter, /\[data-hia-site-chrome\] \.source-reference\s*\{[^}]*background:\s*var\(--hia-surface\)/u);
   assert.match(adapter, /\[data-hia-site-chrome\] \.nav-tree-link\s*\{[^}]*color:\s*var\(--hia-muted\)/u);
+  assert.match(adapter, /\[data-hia-site-chrome\] \.nav-group h2 span\s*\{[^}]*color:\s*var\(--hia-muted\)/u);
 }));
 
 test("shared print media supplies a complete light paper palette and wrapping code without changing screen settings", () => fixture(directory => {

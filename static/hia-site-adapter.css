@@ -32,6 +32,7 @@
 [data-hia-site-chrome] td,[data-hia-site-chrome] th { border-color:var(--hia-border); padding:13px 16px; }
 [data-hia-site-chrome] .nav-group { background:transparent; margin:0 0 20px; }
 [data-hia-site-chrome] .nav-group h2 { font-size:.78rem; color:var(--hia-muted); }
+[data-hia-site-chrome] .nav-group h2 span { color:var(--hia-muted); }
 [data-hia-site-chrome] .nav-tree-root,[data-hia-site-chrome] .nav-tree-children ul { list-style:none; margin:0; padding:0 0 0 .6rem; border-left:1px solid var(--hia-border); }
 [data-hia-site-chrome] .nav-tree-root { border:0; padding:0; }
 /* <lang><zh-CN>未选中的目录项也使用当前外观的辅助前景，选中态继续由其专用规则呈现。</zh-CN><en>Unselected directory items also use the current appearance's muted foreground, with selected items handled by their dedicated rule.</en></lang> */
