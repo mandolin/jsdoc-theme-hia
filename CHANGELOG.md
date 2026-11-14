@@ -8,6 +8,8 @@
 - English: Use a light paper/code palette with wrapping code lines during printing and restore screen appearance afterward.
 - 中文：纸面中的注释、关键字及行号同步采用可读前景。
 - English: Give printed comments, keywords and line numbers readable foregrounds.
+- 中文：未选中的目录项同样采用当前外观的可读辅助前景。
+- English: Give unselected directory items a readable muted foreground for the current appearance.
 
 ## Unreleased — Narrow parameter tables
 
