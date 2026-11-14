@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Reading-operation focus
+
+- 中文：共享页内目录将焦点移至真实小节，原生summary继续承担顺序键盘访问。
+- English: Shared outlines focus their actual sections while native summaries retain sequential keyboard access.
+- 中文：源码加载期间保留发起按钮并标记暂不可用，终态与重置在原控件间交接焦点，尊重加载期间用户已移走的焦点。
+- English: Keep the initiating source button temporarily unavailable during loading, transfer focus between existing terminal/reset controls and respect focus moved by the user while loading.
+
 ## Unreleased — Shared appearance and printing
 
 - 中文：共享导航的签名、标题、说明、示例/元数据标签和来源状态采用站点语义颜色，改善深色与系统外观下的对比度。

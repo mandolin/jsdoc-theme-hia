@@ -79,6 +79,17 @@ test("shared parameter tables retain native width and complete identifier words 
   assert.ok(html.includes("profile") && html.includes("DocumentationPresentationProfile") && html.includes("Public rendering configuration with a complete description."));
 }));
 
+test("shared native outline sections are explicit focus targets outside sequential Tab order", () => fixture(directory => {
+  // <lang><zh-CN>正常publish生成的真实小节必须接收目录脚本的focus，顺序Tab仍由原生summary承担。</zh-CN><en>Real sections from normal publish must receive outline focus while native summaries retain sequential Tab navigation.</en></lang>
+  const doclet = { kind: "function", name: "focused", longname: "focused", params: [{ name: "value", description: "Public value." }], returns: [{ description: "Public result." }] };
+  publish(() => ({ get: () => [doclet] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "en" } });
+  const page = fs.readdirSync(directory).find(file => file.startsWith("focused-") && file.endsWith(".html"));
+  const html = fs.readFileSync(path.join(directory, page), "utf8");
+  const sections = [...html.matchAll(/<details\b[^>]*data-hia-reading-section="native"[^>]*>/gu)];
+  assert.ok(sections.length >= 2);
+  assert.ok(sections.every(section => section[0].includes('tabindex="-1"')));
+}));
+
 test("shared native prose and signatures use the active site's semantic foregrounds", () => fixture(directory => {
   // <lang><zh-CN>实际publish输出仍含原生签名和说明，适配器负责它们在当前站点表面上的前景色。</zh-CN><en>Actual publish retains native signatures and prose, with the adapter owning their foregrounds on the active site surface.</en></lang>
   const doclet = { kind: "function", name: "readable", longname: "readable", description: "Readable public description.", params: [{ name: "value", description: "Public value." }], returns: [{ description: "Readable result." }] };

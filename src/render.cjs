@@ -1845,7 +1845,8 @@ function renderPage(options) {
     body = body.replace(/<details class="([^"]*collapsible-section)"([^>]*)>(\s*<summary[^>]*><h[23][^>]*>([\s\S]*?)<\/h[23]>)/gu, (match, classes, attributes, heading, label) => {
       const id = `hia-native-section-${sections.length + 1}`;
       sections.push({ id, label: stripHtml(label) });
-      return `<details id="${id}" data-hia-reading-section="native" class="${classes}"${attributes}>${heading}`;
+      // <lang><zh-CN>页内目录可将焦点移到真实小节，负tabindex保留原生summary的顺序键盘入口。</zh-CN><en>Let the outline focus its actual section while negative tabindex preserves native summary order.</en></lang>
+      return `<details id="${id}" tabindex="-1" data-hia-reading-section="native" class="${classes}"${attributes}>${heading}`;
     });
     // <lang><zh-CN>窄屏长行/表格的局部滚动区域可由键盘聚焦，正文与原生table语义保持。</zh-CN><en>Local overflow areas for narrow-screen long lines/tables are keyboard-focusable while retaining prose and native table semantics.</en></lang>
     body = body.replace(/<pre\b/gu, '<pre tabindex="0"');

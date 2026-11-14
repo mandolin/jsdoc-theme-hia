@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @lang zh-CN 独立文档的语言、阅读偏好与限界源码读取增强，异步转换保留可见焦点及用户焦点所有权。
+ * @lang en Standalone locale, reading-preference and bounded source enhancements, preserving visible focus and user focus ownership across asynchronous transitions.
+ */
 "use strict";
 
 (() => {
@@ -392,7 +397,12 @@
       // <lang><zh-CN>state 是 reader 的唯一状态事实；非法转换保持原态。</zh-CN><en>State is the reader's sole state fact; an invalid transition preserves it.</en></lang>
       let state = "idle";
 
-      /** @param {string} nextState <lang><zh-CN>候选下一状态。</zh-CN><en>Candidate next state.</en></lang> */
+      /**
+       * @lang zh-CN 校验原状态转换并同步控件，只有原控件仍拥有焦点时才交给其替代控件。
+       * @lang en Validate the original state transition and synchronize controls, transferring focus only when the predecessor still owns it.
+       * @param {string} nextState <lang><zh-CN>候选下一状态。</zh-CN><en>Candidate next state.</en></lang>
+       * @returns {boolean} <lang><zh-CN>合法转换为true，无效转换不改变控件和焦点。</zh-CN><en>True for an admitted transition; invalid transitions preserve controls and focus.</en></lang>
+       */
       function transition(nextState) {
         const valid = (state === "idle" && nextState === "loading")
           || (state === "loading" && terminalStates.has(nextState))
@@ -400,13 +410,23 @@
         if (!valid) {
           return false;
         }
+        // <lang><zh-CN>在显隐更新前记录真实焦点所有者，异步响应不能抢回用户已移走的焦点。</zh-CN><en>Capture the actual focus owner before visibility changes so asynchronous responses cannot reclaim focus moved by the user.</en></lang>
+        const focusedControl = document.activeElement;
         state = nextState;
         reader.setAttribute("data-hia-source-state", state);
         statusElement.setAttribute("data-hia-label", `source.state.${state}`);
         statusElement.textContent = getRuntimeLabel(`source.state.${state}`);
-        loadButton.hidden = state !== "idle";
+        // <lang><zh-CN>加载期间保留可见的发起控件，以aria-disabled说明暂不可用；原状态机继续拒绝重复请求。</zh-CN><en>Keep the initiating control visible during loading and expose temporary unavailability with aria-disabled; the original state machine rejects duplicate requests.</en></lang>
+        loadButton.hidden = state !== "idle" && state !== "loading";
+        loadButton.setAttribute("aria-disabled", String(state === "loading"));
         resetButton.hidden = !terminalStates.has(state);
         outputContainer.hidden = state !== "ready";
+        // <lang><zh-CN>只在旧控件仍持有焦点时交接到替代控件，保持既有Tab顺序与阅读位置。</zh-CN><en>Transfer focus only from its still-focused predecessor, retaining native Tab order and reading position.</en></lang>
+        if (focusedControl === loadButton && terminalStates.has(state)) {
+          resetButton.focus({ preventScroll: true });
+        } else if (focusedControl === resetButton && state === "idle") {
+          loadButton.focus({ preventScroll: true });
+        }
         return true;
       }
 
