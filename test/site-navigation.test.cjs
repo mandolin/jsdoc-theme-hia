@@ -104,6 +104,9 @@ test("shared print media supplies a complete light paper palette and wrapping co
   }
   assert.match(body, /color-scheme:\s*light/u);
   assert.match(print, /\.signature code[^}]*white-space:\s*pre-wrap/u);
+  // <lang><zh-CN>实际PDF中的语法子节点有自己的颜色，纸面必须同时覆盖关键词与注释前景。</zh-CN><en>Syntax child nodes have their own colors in the actual PDF, so paper rules must also cover keyword and comment foregrounds.</en></lang>
+  assert.match(print, /\.tok-keyword[^}]*color:\s*var\(--hia-accent\)/u);
+  assert.match(print, /\.tok-comment[^}]*color:\s*var\(--hia-muted\)/u);
 }));
 
 test("invalid navigation or missing UI locale fails before creating the output", () => fixture(directory => {

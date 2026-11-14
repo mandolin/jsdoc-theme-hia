@@ -6,6 +6,8 @@
 - English: Use site-semantic colors for shared-navigation signatures, headings, prose, example/metadata labels and source status surfaces in dark and system appearance.
 - 中文：打印采用浅色纸面及代码前景/背景，长代码换行，退出打印后恢复屏幕外观。
 - English: Use a light paper/code palette with wrapping code lines during printing and restore screen appearance afterward.
+- 中文：纸面中的注释、关键字及行号同步采用可读前景。
+- English: Give printed comments, keywords and line numbers readable foregrounds.
 
 ## Unreleased — Narrow parameter tables
 

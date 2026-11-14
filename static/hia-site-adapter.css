@@ -65,4 +65,7 @@
   [data-hia-site-chrome] .signature, [data-hia-site-chrome] .code-block, [data-hia-site-chrome] .source-reader-output, [data-hia-site-chrome] .hia-source-code { overflow:visible; max-height:none; }
   [data-hia-site-chrome] .signature code, [data-hia-site-chrome] .code-block code, [data-hia-site-chrome] .code-line, [data-hia-site-chrome] .hia-source-code-line { min-width:0; white-space:pre-wrap; overflow-wrap:anywhere; }
   [data-hia-site-chrome] .code-line[data-line]::before { color:var(--hia-muted); }
+  /* <lang><zh-CN>语法高亮子节点拥有独立前景，必须一并适配白纸才能保持注释和关键字可读。</zh-CN><en>Syntax-highlight child nodes own independent foregrounds and must also adapt to white paper for readable comments and keywords.</en></lang> */
+  [data-hia-site-chrome] .tok-comment { color:var(--hia-muted); }
+  [data-hia-site-chrome] .tok-keyword { color:var(--hia-accent); }
 }
