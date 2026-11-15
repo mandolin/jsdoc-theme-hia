@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — Initial code typography
+
+- 中文：共享站点页面在首次排版前应用已配置并规范化的代码字体、字号、行高与缩进，和后续阅读增强保持一致。
+- English: Shared-site pages apply configured, normalized code font, size, line height and tab width before initial layout, matching subsequent reading enhancement.
+
 ## Unreleased — Reading-operation focus
 
 - 中文：共享页内目录将焦点移至真实小节，原生summary继续承担顺序键盘访问。

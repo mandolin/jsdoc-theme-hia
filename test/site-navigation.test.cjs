@@ -79,6 +79,20 @@ test("shared parameter tables retain native width and complete identifier words 
   assert.ok(html.includes("profile") && html.includes("DocumentationPresentationProfile") && html.includes("Public rendering configuration with a complete description."));
 }));
 
+test("shared pages apply configured code typography before runtime enhancement", () => fixture(directory => {
+  // <lang><zh-CN>正常publish必须将同一规范化代码偏好写入首屏body，防止脚本启动前先排版另一套字体。</zh-CN><en>Normal publish must write the same normalized code preferences into the initial body, avoiding layout with a different font before scripts initialize.</en></lang>
+  const doclet = { kind: "function", name: "typography", longname: "typography", params: [{ name: "value", type: { names: ["string"] } }] };
+  publish(() => ({ get: () => [doclet] }), { destination: directory, hia: { siteNavigation: navigation(), uiLocale: "en", theme: { code: { fontFamily: "mono", fontSize: 14, lineHeight: 1.7, tabSize: 4 } } } });
+  const page = fs.readdirSync(directory).find(file => file.startsWith("typography-") && file.endsWith(".html"));
+  const html = fs.readFileSync(path.join(directory, page), "utf8");
+  const initialBody = html.match(/<body\b[^>]*>/u)[0];
+  assert.match(initialBody, /--code-font-family: monospace/u);
+  assert.match(initialBody, /--code-font-size: 14px/u);
+  assert.match(initialBody, /--code-line-height: 1.7/u);
+  assert.match(initialBody, /--code-tab-size: 4/u);
+  assert.ok(html.includes('"fontFamily":"mono"'));
+}));
+
 test("shared native outline anchors focus summaries without excluding their controls from Tab order", () => fixture(directory => {
   // <lang><zh-CN>正常publish生成的真实小节必须接收目录脚本的focus，顺序Tab仍由原生summary承担。</zh-CN><en>Real sections from normal publish must receive outline focus while native summaries retain sequential Tab navigation.</en></lang>
   const doclet = { kind: "function", name: "focused", longname: "focused", params: [{ name: "value", description: "Public value." }], returns: [{ description: "Public result." }] };

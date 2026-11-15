@@ -1852,7 +1852,8 @@ function renderPage(options) {
     // <lang><zh-CN>窄屏长行/表格的局部滚动区域可由键盘聚焦，正文与原生table语义保持。</zh-CN><en>Local overflow areas for narrow-screen long lines/tables are keyboard-focusable while retaining prose and native table semantics.</en></lang>
     body = body.replace(/<pre\b/gu, '<pre tabindex="0"');
     const links = renderNavigation(groups, labels, renderOptions).replace(/<a class="nav-tree-link" href="([^"]+)"/gu, (match, href) => `${match}${doclets.some(doclet => href === `#${getDocletId(doclet)}`) ? ' aria-current="page"' : ""}`);
-    return siteChrome.chrome.renderPage({
+    // <lang><zh-CN>首屏与增强脚本共用已经规范化的代码偏好，避免先使用默认字体排版再切换。</zh-CN><en>The initial page and enhancement share normalized code preferences, avoiding layout with a default font before switching.</en></lang>
+    const framedPage = siteChrome.chrome.renderPage({
       role: doclets.length ? "entry" : "index", outputPath: currentPageFile, uiLocale: renderOptions.locale,
       localePages: siteChrome.localePages(pageFile), title: doclets[0] ? `${getDocletTitle(doclets[0])} · ${title}` : title,
       directoryHtml: `<nav aria-label="${escapeHtml(formatUiLabel(labels, "nav.symbols"))}">${links}</nav>`,
@@ -1861,6 +1862,7 @@ function renderPage(options) {
       dataHtml: `<script type="application/json" id="hia-search-data">${escapeJsonScript(searchIndex)}</script><script type="application/json" id="hia-i18n-data">${escapeJsonScript(i18nPageData)}</script><script type="application/json" id="hia-theme-data">${escapeJsonScript(themeData)}</script>`,
       scheme: renderOptions.theme.scheme
     });
+    return framedPage.replace("<body>", `<body style="${escapeHtml(codeStyle)}">`);
   }
 
   return `<!doctype html>

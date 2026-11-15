@@ -229,6 +229,8 @@ Theme UI behavior can be configured under `opts.hia.theme`:
 - `code.tabSize`: default source code tab size.
 - `code.wrap`: whether source code wraps by default.
 
+Shared-site pages apply the normalized code font, size, line height and tab width in their initial HTML. Runtime preferences continue from those configured defaults.
+
 Page and source behavior can be configured under `opts.hia.presentation`:
 
 - `pageMode`: `multi-page` (default) or `single-page`.
