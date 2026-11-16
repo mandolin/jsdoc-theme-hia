@@ -205,3 +205,9 @@ test("shared search uses native summaries and excludes localized example bodies"
   assert.ok(index.includes("Searchable public summary."));
   assert.equal(index.includes("SYNTHETIC_EXAMPLE_BODY_ONLY"), false);
 }));
+
+test("shared source readers reserve their idle space before binding without exposing inactive controls", () => {
+  // <lang><zh-CN>隐藏期间保留已确认源码读取区的尺寸，但其控件仍不可见及不可聚焦。</zh-CN><en>Reserve the confirmed reader dimensions while hidden, keeping its controls invisible and unfocusable.</en></lang>
+  const css = fs.readFileSync(path.join(__dirname, "../static/hia-site-adapter.css"), "utf8");
+  assert.match(css, /\[data-hia-site-chrome\] \.source-reader\[hidden\]\s*\{[^}]*display:\s*block\s*!important;[^}]*visibility:\s*hidden;/u);
+});

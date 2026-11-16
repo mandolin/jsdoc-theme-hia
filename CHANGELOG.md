@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — Initial source-reader layout
+
+- 中文：共享站点框架下的源码读取区在绑定前预留空闲态空间，加载控件在绑定完成后显示，减少已有片段深链的初始化偏移。
+- English: Source readers under shared site chrome reserve idle space before binding and reveal load controls when binding completes, reducing initialization shifts on existing fragment links.
+
 ## Unreleased — Initial code typography
 
 - 中文：共享站点页面在首次排版前应用已配置并规范化的代码字体、字号、行高与缩进，和后续阅读增强保持一致。

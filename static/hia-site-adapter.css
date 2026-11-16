@@ -46,6 +46,8 @@
 [data-hia-site-chrome] .hia-site-source-links { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
 [data-hia-site-chrome] .hia-site-source-links a { border:1px solid var(--hia-border); border-radius:7px; padding:7px 12px; background:var(--hia-surface); }
 [data-hia-site-chrome] .hia-site-source-boundary { color:var(--hia-muted); font-size:.83rem; }
+/* <lang><zh-CN>源码读取器绑定前保留空闲态空间，避免加载按钮和状态后来出现推动已有深链；visibility保持未绑定控件不可访问。</zh-CN><en>Reserve idle reader space before binding so newly exposed load/status controls cannot displace an existing deep link; visibility keeps unbound controls inaccessible.</en></lang> */
+[data-hia-site-chrome] .source-reader[hidden] { display:block !important; visibility:hidden; }
 [data-hia-site-chrome] .hia-source-code { overflow:auto; max-width:100%; border:1px solid var(--hia-border); border-radius:10px; background:var(--hia-surface); padding:18px; font:13px/1.8 Consolas,monospace; }
 @media(max-width:800px) { [data-hia-site-chrome] .doclet h1 { font-size:1.6rem; } }
 @media print {
