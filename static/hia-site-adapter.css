@@ -75,3 +75,12 @@
   [data-hia-site-chrome] .tok-comment { color:var(--hia-muted); }
   [data-hia-site-chrome] .tok-keyword { color:var(--hia-accent); }
 }
+
+/* <lang><zh-CN>原生示例和已授权源码复用共享阅读设置，行号伪元素不进入复制文本。</zh-CN><en>Native examples and authorized source reuse shared reading settings, keeping pseudo-element numbers outside copied text.</en></lang> */
+[data-hia-site-chrome] .source-reader-output { color:var(--hia-text); background:var(--hia-surface); border-color:var(--hia-border); }
+[data-hia-site-chrome] .source-reader-output code { display:block; white-space:normal; }
+[data-hia-site-chrome] .source-reader-output .code-line[data-line]::before { color:var(--hia-muted); }
+[data-hia-site-chrome] .source-reader-output .code-line { padding:0; }
+[data-hia-site-chrome][data-hia-reading-wrap="wrap"] .code-line { white-space:pre-wrap; overflow-wrap:anywhere; min-width:0; }
+[data-hia-site-chrome][data-hia-reading-wrap="wrap"] .code-block code { min-width:0; }
+[data-hia-site-chrome][data-hia-reading-lines="hide"] .code-line[data-line]::before { display:none; }

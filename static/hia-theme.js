@@ -493,7 +493,24 @@
             transition("network-error");
             return;
           }
-          outputElement.textContent = text;
+          // <lang><zh-CN>共享导航使用既有code-line表示，逐字保留分隔符且只在完整性核验后构造安全DOM。</zh-CN><en>Shared navigation uses existing code-line rows, retaining exact separators and constructing safe DOM only after integrity verification.</en></lang>
+          if (document.documentElement?.hasAttribute("data-hia-site-chrome")) {
+            const declaredStart = Number(reader.getAttribute("data-hia-source-start-line"));
+            const startLine = Number.isSafeInteger(declaredStart) && declaredStart > 0 ? declaredStart : 1;
+            const lines = text.split("\n");
+            outputElement.textContent = "";
+            for (let index = 0; index < lines.length; index += 1) {
+              // <lang><zh-CN>正文通过textContent写入，行号放在属性中供CSS呈现，保持复制原文并避免执行源码。</zh-CN><en>Set prose through textContent and place numbers in CSS-rendered attributes, preserving copied text without executing source.</en></lang>
+              const row = document.createElement("span");
+              row.className = "code-line";
+              row.setAttribute("data-line", String(startLine + index));
+              row.textContent = lines[index];
+              outputElement.appendChild(row);
+              if (index < lines.length - 1) outputElement.appendChild(document.createTextNode("\n"));
+            }
+          } else {
+            outputElement.textContent = text;
+          }
           transition("ready");
         } catch (error) {
           transition(error && error.name === "AbortError" ? "aborted" : "network-error");

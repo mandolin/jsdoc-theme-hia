@@ -287,3 +287,11 @@ See the shipped [API reference](API.md) for every root/nested export, callback s
 See [MIGRATION.md](MIGRATION.md). Before npm ci, run npm run prepare:owners with the exact sibling plugin checkout declared in owner-sources.json. The explicit local tarball/SRI development source avoids assuming an unpublished registry version exists. It does not rewrite manifests or publish packages.
 
 中文：源码候选1.0.0；开发先核固定owner归档再冻结安装，公开消费/实际发布另验。
+
+### Shared reading controls
+
+With host navigation enabled, **Long code lines** applies to native examples and loaded source rows. **Source line numbers** shows or hides existing numbered rows. Loaded source uses the producer fragment's starting line, falling back to snippet-relative numbering when a starting line is unavailable. Numbering provides a reading aid. Source-location precision follows the existing provenance evidence.
+
+The source reader verifies the existing digest and limits before building text-only rows. Copying retains the original source text, including blank lines and line endings. Reloading a page resets its shared reading preferences. Script-free pages retain their ordinary source links.
+
+中文说明。共享阅读设置覆盖原生代码与获准源码。行号沿已有片段范围，缺少起点时采用片段相对行。原文、摘要检查和读取限制沿现有配置。

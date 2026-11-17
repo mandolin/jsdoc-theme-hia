@@ -212,3 +212,11 @@ test("shared source readers reserve their idle space before binding without expo
   assert.match(css, /@media \(scripting: enabled\)\s*\{\s*\[data-hia-site-chrome\] \.source-reader\[hidden\]/u);
   assert.match(css, /\[data-hia-site-chrome\] \.source-reader\[hidden\]\s*\{[^}]*display:\s*block\s*!important;[^}]*visibility:\s*hidden;/u);
 });
+
+
+test("shared reading settings reach native example and fetched-source rows", () => {
+  // <lang><zh-CN>原生行表示须消费共享设置，控件存在本身不能作为采用证明。</zh-CN><en>Native rows must consume shared settings; control presence alone cannot prove adoption.</en></lang>
+  const css = fs.readFileSync(path.join(__dirname, "../static/hia-site-adapter.css"), "utf8");
+  assert.match(css,/data-hia-reading-wrap="wrap"[^}]*\.code-line[^}]*white-space:\s*pre-wrap/u);
+  assert.match(css,/data-hia-reading-lines="hide"[^}]*\.code-line\[data-line\]::before[^}]*display:\s*none/u);
+});

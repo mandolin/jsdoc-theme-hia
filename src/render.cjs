@@ -1366,7 +1366,7 @@ function renderSelectedSourceMode(fragment, preview, sourceEntry, labels, render
     return `  <div class="source-links"><a href="${escapeHtml(sourceEntry.relativeUrl)}" ${renderLabelAttributes("source.open")}>${escapeHtml(formatUiLabel(labels, "source.open"))}</a></div>`;
   }
   if (mode === "fetch" && sourceEntry && sourceEntry.relativeUrl) {
-    return renderSourceReader(sourceEntry, labels);
+    return renderSourceReader(sourceEntry, labels, fragment);
   }
   if (mode === "none") {
     return "";
@@ -1385,14 +1385,17 @@ function renderSelectedSourceMode(fragment, preview, sourceEntry, labels, render
  *
  * @param {object} sourceEntry 已绑定 digest/limit 的内部 asset entry。 / Internal digest/limit-bound asset entry.
  * @param {object} labels 当前 UI labels。 / Current UI labels.
+ * @param {object} fragment <lang><zh-CN>已有公开片段及其可选起始行。</zh-CN><en>Existing public fragment and optional starting line.</en></lang>
  * @returns {string} source reader HTML。 / Source-reader HTML.
  */
-function renderSourceReader(sourceEntry, labels) {
+function renderSourceReader(sourceEntry, labels, fragment) {
+  // <lang><zh-CN>起始行仅复用已有片段范围，缺少时采用既有预览的片段相对行1。</zh-CN><en>Reuse the existing fragment start, falling back to snippet-relative line one as in existing previews.</en></lang>
+  const startLine = Number.isSafeInteger(fragment?.range?.start?.line) && fragment.range.start.line > 0 ? fragment.range.start.line : 1;
   // <lang><zh-CN>integrity 字符串采用 SRI 形态，浏览器 runtime 将算法和值分开校验。</zh-CN><en>The integrity string uses SRI form; browser runtime validates its algorithm and value separately.</en></lang>
   const integrity = `${sourceEntry.digest.algorithm}-${sourceEntry.digest.value}`;
   return [
     // <lang><zh-CN>动态请求控件由运行时绑定后展示，禁脚本阅读使用外层普通源码链接。</zh-CN><en>Reveal dynamic request controls after runtime binding; script-free reading uses the surrounding ordinary source links.</en></lang>
-    `  <div class="source-reader" hidden data-hia-source-reader data-hia-source-state="idle" data-hia-source-url="${escapeHtml(sourceEntry.relativeUrl)}" data-hia-source-integrity="${escapeHtml(integrity)}" data-hia-source-max-bytes="262144" data-hia-source-max-lines="800" data-hia-source-timeout-ms="8000">`,
+    `  <div class="source-reader" hidden data-hia-source-reader data-hia-source-state="idle" data-hia-source-start-line="${startLine}" data-hia-source-url="${escapeHtml(sourceEntry.relativeUrl)}" data-hia-source-integrity="${escapeHtml(integrity)}" data-hia-source-max-bytes="262144" data-hia-source-max-lines="800" data-hia-source-timeout-ms="8000">`,
     `    <div class="source-reader-actions"><button type="button" data-hia-source-load ${renderLabelAttributes("source.load")}>${escapeHtml(formatUiLabel(labels, "source.load"))}</button><button type="button" data-hia-source-reset hidden ${renderLabelAttributes("source.reset")}>${escapeHtml(formatUiLabel(labels, "source.reset"))}</button></div>`,
     `    <p class="source-reader-status" aria-live="polite" data-hia-source-status ${renderLabelAttributes("source.state.idle")}>${escapeHtml(formatUiLabel(labels, "source.state.idle"))}</p>`,
     `    <pre class="source-reader-output" hidden><code data-hia-source-output data-language="${escapeHtml(sourceEntry.language || "javascript")}"></code></pre>`,

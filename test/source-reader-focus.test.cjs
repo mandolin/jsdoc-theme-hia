@@ -12,19 +12,22 @@ const { runInNewContext } = require("node:vm");
 const { createHash, webcrypto } = require("node:crypto");
 
 /** @lang zh-CN 只提供源码阅读器使用的DOM与受控响应，隐藏聚焦元素按浏览器实际行为退回body。 @lang en Supply only reader DOM and controlled responses, returning focus to body when its element is hidden as observed in browsers. */
-function host(terminal) {
+function host(terminal, navigation = false, sourceText = "export const value = 1;") {
   // <lang><zh-CN>函数按原文件边界提取，测试不会复制被测状态转换实现。</zh-CN><en>Extract by actual file boundaries without copying the transition implementation.</en></lang>
   const script = fs.readFileSync(path.join(__dirname, "../static/hia-theme.js"), "utf8");
   const start = script.indexOf("  function initSourceReaders() {");
   const end = script.indexOf("\n  initThemeControls();", start);
   assert.ok(start >= 0 && end > start);
-  const document = { body: {}, activeElement: null, querySelectorAll: () => [reader] };
+  const document = { body: {}, activeElement: null, documentElement: {hasAttribute: () => navigation}, querySelectorAll: () => [reader], createElement: () => control(), createTextNode: text => ({textContent:text}) };
   /** @lang zh-CN 单个控件保留属性、事件与焦点，只模拟本任务涉及的可见性规则。 @lang en A control retains attributes, listeners and focus, simulating only visibility rules relevant to this regression. */
   function control() {
     let hidden = false;
     const attributes = new Map();
     return {
-      listeners: {}, textContent: "", attributes,
+      listeners: {}, attributes, children: [],
+      get textContent() { return this.children.length ? this.children.map(node => node.textContent).join("") : this.value || ""; },
+      set textContent(value) { this.value = value; this.children = []; },
+      appendChild(node) { this.children.push(node); },
       get hidden() { return hidden; },
       set hidden(value) { hidden = value; if (value && document.activeElement === this) document.activeElement = document.body; },
       focus() { document.activeElement = this; },
@@ -39,15 +42,15 @@ function host(terminal) {
   const container = control();
   output.closest = () => container;
   // <lang><zh-CN>固定公开字节与摘要使成功/空响应经过真实完整性分支，错误响应按原状态集合处理。</zh-CN><en>Fixed public bytes and digests exercise actual success/empty integrity branches while error responses retain the original states.</en></lang>
-  const bytes = Buffer.from(terminal === "empty" ? "" : "export const value = 1;");
-  const attributes = new Map(Object.entries({ "data-hia-source-url": "source.txt", "data-hia-source-integrity": "sha256-" + createHash("sha256").update(terminal === "integrity-error" ? "other" : bytes).digest("base64"), "data-hia-source-max-bytes": "10000", "data-hia-source-max-lines": "100", "data-hia-source-timeout-ms": "1000" }));
+  const bytes = Buffer.from(terminal === "empty" ? "" : sourceText);
+  const attributes = new Map(Object.entries({ "data-hia-source-start-line": "24", "data-hia-source-url": "source.txt", "data-hia-source-integrity": "sha256-" + createHash("sha256").update(terminal === "integrity-error" ? "other" : bytes).digest("base64"), "data-hia-source-max-bytes": "10000", "data-hia-source-max-lines": "100", "data-hia-source-timeout-ms": "1000" }));
   const reader = { hidden: true, querySelector: selector => ({ "[data-hia-source-load]": load, "[data-hia-source-reset]": reset, "[data-hia-source-status]": status, "[data-hia-source-output]": output })[selector], getAttribute: key => attributes.get(key), setAttribute: (key, value) => attributes.set(key, value) };
   let complete;
   let requestCount = 0;
   const response = new Promise(resolve => { complete = resolve; });
   const window = { fetch() { requestCount++; return response; }, crypto: webcrypto, setTimeout, clearTimeout, btoa: value => Buffer.from(value, "binary").toString("base64") };
   runInNewContext("(" + script.slice(start, end) + ")", { document, window, themeData: {}, AbortController, TextDecoder, Uint8Array })();
-  return { document, reader, load, reset, status, container, attributes, requests: () => requestCount,
+  return { document, reader, load, reset, status, container, output, attributes, requests: () => requestCount,
     finish() {
       if (terminal === "aborted") complete(Promise.reject(Object.assign(new Error("test abort"), { name: "AbortError" })));
       else complete({ status: { denied: 403, "not-found": 404, "network-error": 503 }[terminal] || 200, ok: !["denied", "not-found", "network-error"].includes(terminal), arrayBuffer: async () => Uint8Array.from(bytes).buffer });
@@ -92,4 +95,21 @@ test("a late source response preserves focus moved by the user", async () => {
   state.finish();
   await pending;
   assert.equal(state.document.activeElement, other);
+});
+
+
+test("shared fetched-source rows preserve CRLF, empty lines, unsafe text and original line offsets", async () => {
+  // <lang><zh-CN>合成源码只能成为文本节点，行号属性沿已有范围，重置必须清除旧行。</zh-CN><en>Synthetic source must remain text nodes, with number attributes following the existing range and reset clearing old rows.</en></lang>
+  const text="first\r\n\n<script>globalThis.unsafe = true</script>\n";
+  const state=host("ready",true,text);
+  const pending=state.load.listeners.click();
+  state.finish();
+  await pending;
+  assert.equal(state.output.textContent,text);
+  const rows=state.output.children.filter(node=>node.className==="code-line");
+  assert.deepEqual(rows.map(row=>row.attributes.get("data-line")),["24","25","26","27"]);
+  assert.equal(rows[2].textContent,"<script>globalThis.unsafe = true</script>");
+  state.reset.listeners.click();
+  assert.equal(state.output.textContent,"");
+  assert.equal(state.output.children.length,0);
 });

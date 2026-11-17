@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — Shared reading settings
+
+- 中文：原生示例与已核验内联源码采用共享换行和行号设置，保留精确原文、片段起始行及读取状态。
+- English: Apply shared wrapping and line-number controls to native examples and verified inline source, retaining exact text, fragment starting lines and reader states.
+
 ## Unreleased — Initial source-reader layout
 
 - 中文：共享站点框架下的源码读取区在绑定前预留空闲态空间，加载控件在绑定完成后显示，减少已有片段深链的初始化偏移。
